@@ -6,7 +6,7 @@ ISKOnek SIS is a streamlined desktop application designed to manage student admi
 **Features**
 - My Profile: View and manage personal details, including name, contact info, and guardian information.
 - My Student Ledger: Display payment transactions and account balance with the Accounting office.
-- My Schedule Viewer: Visualize weekly class schedules (Sun-Sat, 6AM-9PM) with subject details (code, section, teacher).
+- My Schedule Viewer: Visualize weekly class schedules (Sun-Sat, 6AM-9PM) with subject details (code & section).
 - Upload ID: Upload student ID images, extract text using Tesseract OCR, and validate against stored records.
   
 **Tech Stack**
@@ -28,7 +28,7 @@ ISKOnek SIS is a streamlined desktop application designed to manage student admi
 ```
 bash
 git clone https://github.com/riyakko/iskonek.git
-cd iskonek-sif
+cd iskonek
 ```
 3. **Install Tesseract OCR:**
 - Windows: Download and install Tesseract from GitHub.
@@ -92,17 +92,16 @@ bash
 iskonek-sif/
 ├── src/
 │   ├── main/
-│   │   ├── java/
-│   │   │   ├── iskonek
-│   │   │   │   ├── EnrollForm.java
-│   │   │   │   ├── IskonekLogin.java
-│   │   │   │   ├── Ledger.java
-│   │   │   │   ├── ScheduleViewer.java
-│   │   │   │   ├── SQLiteConnector.java
-│   │   │   │   ├── StudentDashboard.java (My Profile, Schedule Viewer, Student Ledger)
-│   │   │   │   ├── StudentInformation.java 
+│   │   ├── java/iskonek
+│   │   │   ├── EnrollForm.java
+│   │   │   ├── IskonekLogin.java
+│   │   │   ├── Ledger.java
+│   │   │   ├── ScheduleViewer.java
+│   │   │   ├── SQLiteConnector.java
+│   │   │   ├── StudentDashboard.java
+│   │   │   ├── StudentInformation.java 
 │   │   ├── resources/
-│   │   │   ├── db/
+│   │   │   ├── Assets (PNG & OTF)
 ├── pom.xml
 ├── iskonek.db
 ├── README.md

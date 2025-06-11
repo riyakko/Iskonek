@@ -29,7 +29,7 @@ ISKOnek SIS is a streamlined desktop application designed to manage student admi
 ```
 bash
 git clone https://github.com/riyakko/iskonek.git
-cd iskonek
+cd oop_project
 ```
 3. **Install Tesseract OCR:**
 - Windows: Download and install Tesseract from GitHub.
@@ -64,8 +64,7 @@ mvn clean install
 - Update database path in src/main/java/SQLiteConnector.java if needed.
   
 5. **Run the Application:**
-bash
-- mvn exec:java
+- Right click the IDE then Run the Java file (IskonekLogin.java).
 
 **Usage**
 1. **Launch the Application:**

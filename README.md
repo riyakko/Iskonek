@@ -4,10 +4,11 @@ Overview
 ISKOnek SIS is a streamlined desktop application designed to manage student administration, academic processes, and student services. Built in a two-week sprint, it provides a centralized platform for students to view personal information, payment transactions, class schedules, and upload IDs with text extraction using Tesseract OCR.
 
 **Features**
+- Login Page: Sign in using provided ID, enrollment page (input user information to get the email and ID provided), upload ID (Upload student ID images, extract text using Tesseract OCR, and validate against stored records).
+- Enrollment Page: Input user data.
 - My Profile: View and manage personal details, including name, contact info, and guardian information.
 - My Student Ledger: Display payment transactions and account balance with the Accounting office.
 - My Schedule Viewer: Visualize weekly class schedules (Sun-Sat, 6AM-9PM) with subject details (code & section).
-- Upload ID: Upload student ID images, extract text using Tesseract OCR, and validate against stored records.
   
 **Tech Stack**
 - Java: JDK 17+ for core application logic.
@@ -69,7 +70,7 @@ bash
 **Usage**
 1. **Launch the Application:**
 - Run the JAR file or use the Maven command above.
-- Log in using a valid Student ID (test data available in iskonek.db).
+- Log in using a valid Student ID (test data available in iskonek.db); enroll if ID is not available.
 2. **My Profile:**
 - View/edit personal details (e.g., name, contact, guardian info).
 3. **My Student Ledger:**

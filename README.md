@@ -27,7 +27,7 @@ ISKOnek SIS is a streamlined desktop application designed to manage student admi
 1. **Clone the Repository:**
 ```
 bash
-git clone https://github.com/<your-username>/iskonek-sif.git
+git clone https://github.com/riyakko/iskonek.git
 cd iskonek-sif
 ```
 3. **Install Tesseract OCR:**
@@ -59,8 +59,8 @@ bash
 mvn clean install
 
 4. **Configure MySQLite:**
-- Initialize the database with provided SQL scripts in src/main/resources/db/schema.sql.
-- Update database path in src/main/java/config/DatabaseConfig.java if needed.
+- Initialize the database with provided SQL scripts in oop_project/lib.
+- Update database path in src/main/java/SQLiteConnector.java if needed.
   
 5. **Run the Application:**
 bash
@@ -69,13 +69,13 @@ bash
 **Usage**
 1. **Launch the Application:**
 - Run the JAR file or use the Maven command above.
-- Log in using a valid Student ID (test data available in db/test-data.sql).
+- Log in using a valid Student ID (test data available in iskonek.db).
 2. **My Profile:**
 - View/edit personal details (e.g., name, contact, guardian info).
 3. **My Student Ledger:**
-- Check payment history and balance in a table format.
+- Check payment history and balance.
 4. **My Schedule Viewer:**
-- View weekly class schedule in a grid (Sun-Sat, 6AM-9PM).
+- View weekly class schedule in a table.
 5. **Upload ID:**
 - Upload a student ID image (e.g., PNG, JPEG).
 - View extracted text (e.g., Student ID, Name) via Tesseract OCR.

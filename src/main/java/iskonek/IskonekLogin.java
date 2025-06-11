@@ -429,7 +429,6 @@ public class IskonekLogin extends JFrame {
             loginButton.setEnabled(false);
             loginButton.setText("Logging in...");
             
-            // Simulate processing delay
             SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean, Void>() {
                 private String loggedInStudentId = studentId;
                 
@@ -547,10 +546,8 @@ public class IskonekLogin extends JFrame {
                         ocrResultArea.setText(ocrResult);
                         ocrScrollPane.setVisible(true);
                         
-                        // Extract student ID from OCR result
                         String extractedId = extractStudentId(ocrResult);
                         if (extractedId != null) {
-                            // Clear placeholder and set extracted ID
                             studentIdField.setText("");
                             studentIdField.setForeground(Color.BLACK);
                             studentIdField.setText(extractedId);
@@ -570,14 +567,13 @@ public class IskonekLogin extends JFrame {
         private String performOCR(File imageFile) {
             try {
                 Tesseract tesseract = new Tesseract();
-                tesseract.setDatapath("tessdata"); // Adjust this path as needed
+                tesseract.setDatapath("C:\\Program Files\\Tesseract-OCR\\tessdata"); 
                 tesseract.setLanguage("eng");
                 
                 BufferedImage image = ImageIO.read(imageFile);
                 String result = tesseract.doOCR(image);
                 return result;
             } catch (TesseractException e) {
-                // Fallback to mock data if Tesseract is not properly configured
                 return generateMockOCRResult(imageFile.getName());
             } catch (IOException e) {
                 throw new RuntimeException("Failed to read image file", e);
@@ -585,7 +581,7 @@ public class IskonekLogin extends JFrame {
         }
         
         private String generateMockOCRResult(String fileName) {
-            // Mock OCR result for demonstration purposes with sample student ID
+            // Mock OCR result 
             return "UNIVERSITY OF THE PHILIPPINES\n" +
                 "STUDENT IDENTIFICATION CARD\n" +
                 "STUDENT ID: 2024-1000\n" +
@@ -620,7 +616,6 @@ public class IskonekLogin extends JFrame {
             statusLabel.setForeground(color);
             statusLabel.setBackground(new Color(color.getRed(), color.getGreen(), color.getBlue(), 20));
             
-            // Auto-hide status after 5 seconds
             Timer timer = new Timer(5000, e -> statusLabel.setText(" "));
             timer.setRepeats(false);
             timer.start();
@@ -630,7 +625,6 @@ public class IskonekLogin extends JFrame {
             JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
         }
         
-        // Method to refresh database connection if needed
         public void refreshDatabaseConnection() {
             try {
                 if (conn != null && !conn.isClosed()) {
@@ -658,7 +652,6 @@ public class IskonekLogin extends JFrame {
         }
         
         public static void main(String[] args) {
-            // Set system look and feel
             try {
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             } catch (Exception e) {

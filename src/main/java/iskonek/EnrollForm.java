@@ -1,6 +1,7 @@
 package iskonek;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -11,6 +12,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
@@ -25,12 +27,16 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
-import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -68,11 +74,14 @@ public class EnrollForm extends JFrame {
     private JComboBox<String> courseBox;
     private JButton showFullListButton;
     private JDialog fullListDialog;
-    private JList<String> scheduleList;
+    private JPanel schedulePanel;
+    private Map<String, JCheckBox> courseCheckBoxes = new HashMap<>();
+    private JScrollPane scheduleScrollPane;
     private JPasswordField passwordField;
     private JPasswordField confirmPasswordField;
     private String generatedStudentId;
     private String generatedStudentEmail;
+    private JList<String> fullList;
 
     public EnrollForm() {
         initializeDatabase();
@@ -81,7 +90,6 @@ public class EnrollForm extends JFrame {
 
     private void initializeDatabase() {
         try {
-            // Use the same database path as login form
             conn = DriverManager.getConnection(DB_URL);
             createTables(conn);
         } catch (SQLException e) {
@@ -126,7 +134,7 @@ private void initializeUI() {
         setLocationRelativeTo(null);
         setResizable(false);
 
-        // Main panel with gradient background
+        // Main panel 
         JPanel mainPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -166,7 +174,6 @@ private void initializeUI() {
     }
 
     private JPanel createFormPanel() {
-        // Create white rounded background panel
         JPanel whitePanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -185,14 +192,13 @@ private void initializeUI() {
         gbc.insets = new Insets(5, 10, 5, 10);
         gbc.anchor = GridBagConstraints.CENTER;
         
-        // Title with shadow effect (matching login form style)
+        // Title 
         JLabel titleLabel = new JLabel("ISKOnek Enrollment") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
-                // Shadow effect
                 g2d.setColor(new Color(0, 0, 0, 50));
                 g2d.setFont(getFont());
                 FontMetrics fm = g2d.getFontMetrics();
@@ -200,7 +206,6 @@ private void initializeUI() {
                 int y = (getHeight() + fm.getAscent()) / 2;
                 g2d.drawString(getText(), x + 2, y + 2);
                 
-                // Main text
                 g2d.setColor(new Color(102, 126, 234)); // Match login form color
                 g2d.drawString(getText(), x, y);
                 g2d.dispose();
@@ -235,10 +240,8 @@ private void initializeUI() {
         passwordField = new RoundedPasswordField();
         confirmPasswordField = new RoundedPasswordField();
 
-        // Add placeholder behavior for DOB field
         addPlaceholderBehavior(dobField, "YYYY-MM-DD");
         
-        // Set consistent field size
         Dimension fieldSize = new Dimension(300, 35);
         firstNameField.setPreferredSize(fieldSize);
         middleNameField.setPreferredSize(fieldSize);
@@ -259,7 +262,6 @@ private void initializeUI() {
         gbc.insets = new Insets(8, 10, 8, 10);
         gbc.anchor = GridBagConstraints.EAST;
 
-        // Form fields with labels
         int row = 1;
         
         // First Name
@@ -420,32 +422,19 @@ private void initializeUI() {
         gbc.gridx = 1;
         gbc.anchor = GridBagConstraints.WEST;
     
+        schedulePanel = new JPanel();
+        schedulePanel.setLayout(new BoxLayout(schedulePanel, BoxLayout.Y_AXIS));
+        schedulePanel.setBackground(new Color(230, 230, 230));
+        schedulePanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-        // Create a list for multi-selection
-        scheduleList = new JList<>();
+        scheduleScrollPane = new JScrollPane(schedulePanel);
+        scheduleScrollPane.setPreferredSize(new Dimension(300, 200));
+        scheduleScrollPane.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
 
-        // Put list in scroll pane
-        scheduleList.setFont(new Font("Inter", Font.PLAIN, 14));
-        scheduleList.setSelectionBackground(new Color(102, 126, 234));
-        scheduleList.setSelectionForeground(Color.WHITE);
-        scheduleList.setLayoutOrientation(JList.VERTICAL);
-        scheduleList.setFixedCellHeight(25);
-        scheduleList.setFixedCellWidth(280); 
-        scheduleList.setBackground(new Color(230, 230, 230)); 
-        scheduleList.setForeground(Color.BLACK);
-        scheduleList.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5)); 
-        scheduleList.setFont(new Font("Inter", Font.PLAIN, 14));
-        scheduleList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        scheduleList.setCursor(new Cursor(Cursor.HAND_CURSOR)); 
-        scheduleList.setFocusable(false); 
-        scheduleList.setLayoutOrientation(JList.VERTICAL_WRAP); 
-        scheduleList.setVisibleRowCount(13); 
-        scheduleList.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1)); 
-
-
-        JScrollPane scrollPane = new JScrollPane(scheduleList);
-        scrollPane.setPreferredSize(new Dimension(300, 70)); 
-        whitePanel.add(scrollPane, gbc);
+        gbc.gridx = 1;
+        gbc.gridy = row;
+        gbc.anchor = GridBagConstraints.WEST;
+        whitePanel.add(scheduleScrollPane, gbc);
 
         courseBox.addActionListener(e -> updateSchedules());
         updateSchedules();
@@ -460,8 +449,6 @@ private void initializeUI() {
         showFullListButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         showFullListButton.addActionListener(e -> showFullScheduleList());
 
-
-        // Add button below the schedule list
         row++;
         gbc.gridy = row;
         gbc.gridx = 1;
@@ -478,7 +465,6 @@ private void initializeUI() {
         passwordLabel.setFont(new Font("Inter", Font.PLAIN, 14));
         whitePanel.add(passwordLabel, gbc);
 
-        // Create panel for password field and toggle button
         JPanel passwordPanel = new JPanel(new BorderLayout());
         passwordPanel.add(passwordField, BorderLayout.CENTER);
 
@@ -511,7 +497,6 @@ private void initializeUI() {
         confirmPasswordLabel.setFont(new Font("Inter", Font.PLAIN, 14));
         whitePanel.add(confirmPasswordLabel, gbc);
 
-        // Create panel for confirm password field and toggle button
         JPanel confirmPasswordPanel = new JPanel(new BorderLayout());
         confirmPasswordPanel.add(confirmPasswordField, BorderLayout.CENTER);
 
@@ -535,7 +520,7 @@ private void initializeUI() {
         gbc.anchor = GridBagConstraints.WEST;
         whitePanel.add(confirmPasswordPanel, gbc);
 
-        // Button panel for better layout
+        // Button panel 
         row++;
         gbc.gridx = 0;
         gbc.gridy = row;
@@ -586,90 +571,216 @@ private void initializeUI() {
 
     private void updateSchedules() {
         String selectedCourse = (String) courseBox.getSelectedItem();
-        DefaultListModel<String> model = new DefaultListModel<>();
-        
+        if (!courseCheckBoxes.isEmpty()) {
+        schedulePanel.removeAll();
+        courseCheckBoxes.clear();
+        }
         if (selectedCourse != null) {
+            schedulePanel.setLayout(new BoxLayout(schedulePanel, BoxLayout.Y_AXIS));
             switch (selectedCourse) {
                 case "BS Computer Science":
-
-                    model.addElement("COM241 - CCDATRCL: DATA STRUCTURES AND ALGORITHMS | TUE 12:00PM - 04:00PM ROOM 505, FRI 01:00PM - 03:40PM ROOM 431");
-                    model.addElement("COM242  - CCDATRCL: DATA STRUCTURES AND ALGORITHMS | MON 12:00PM - 04:00PM ROOM 505, THU 01:00PM - 03:40PM ROOM 431");
-                    model.addElement("COM241 - CCPLTFRL: PLATFORM TECHNOLOGIES | MON 07:00AM - 09:40AM ROOM 431, THU 07:00AM - 11:00AM ROOM 505");
-                    model.addElement("COM242  - CCPLTFRL: PLATFORM TECHNOLOGIES | MON 01:00PM - 03:40PM ROOM 431, THU 12:00PM - 04:00PM ROOM 505");
-                    model.addElement("COM241 - GEFID01X: WIKA AT PANITIKAN SA PAGPAPATIBAY NG PILIPINONG IDENTIDAD | TUE 09:00AM - 11:00AM VR408A, FRI 09:00AM - 11:00AM ROOM 407");
-                    model.addElement("COM242  - GEFID01X: WIKA AT PANITIKAN SA PAGPAPATIBAY NG PILIPINONG IDENTIDAD | TUE 03:00PM - 05:00PM VR408C, FRI 03:00PM - 05:00PM ROOM 407");
-                    model.addElement("COM241 - GEITE01X: LIVING IN THE I.T. ERA | TUE 05:00PM - 07:00PM VR408A, FRI 05:00PM - 07:00PM VR408A");
-                    model.addElement("COM242  - GEITE01X: LIVING IN THE I.T. ERA | TUE 09:00AM - 11:00AM VR408B, FRI 09:00AM - 11:00AM VR408B");
-                    model.addElement("COM241 - GERIZ01X: LIFE AND WORKS OF RIZAL | TUE 03:00PM - 05:00PM VR408A, FRI 03:00PM - 05:00PM VR408A");
-                    model.addElement("COM242  - GERIZ01X: LIFE AND WORKS OF RIZAL | TUE 01:00PM - 03:00PM VR408C, FRI 01:00PM - 03:00PM VR408B");
-                    model.addElement("COM241 - MCFIT04X: PATHFit 4 | MON 04:00PM - 06:40PM Gymnasium2");
-                    model.addElement("COM242  - MCFIT04X: PATHFit 4 | THU 04:00PM - 06:40PM Gymnasium2");
-
+                    addCourseCheckBox("COM241 - CCDATRCL: DATA STRUCTURES AND ALGORITHMS | TUE 12:00PM - 04:00PM ROOM 505, FRI 01:00PM - 03:40PM ROOM 431");
+                    addCourseCheckBox("COM242  - CCDATRCL: DATA STRUCTURES AND ALGORITHMS | MON 12:00PM - 04:00PM ROOM 505, THU 01:00PM - 03:40PM ROOM 431");
+                    addCourseCheckBox("COM241 - CCPLTFRL: PLATFORM TECHNOLOGIES | MON 07:00AM - 09:40AM ROOM 431, THU 07:00AM - 11:00AM ROOM 505");
+                    addCourseCheckBox("COM242  - CCPLTFRL: PLATFORM TECHNOLOGIES | MON 01:00PM - 03:40PM ROOM 431, THU 12:00PM - 04:00PM ROOM 505");
+                    addCourseCheckBox("COM241 - GEFID01X: WIKA AT PANITIKAN SA PAGPAPATIBAY NG PILIPINONG IDENTIDAD | TUE 09:00AM - 11:00AM VR408A, FRI 09:00AM - 11:00AM ROOM 407");
+                    addCourseCheckBox("COM242  - GEFID01X: WIKA AT PANITIKAN SA PAGPAPATIBAY NG PILIPINONG IDENTIDAD | TUE 03:00PM - 05:00PM VR408C, FRI 03:00PM - 05:00PM ROOM 407");
+                    addCourseCheckBox("COM241 - GEITE01X: LIVING IN THE I.T. ERA | TUE 05:00PM - 07:00PM VR408A, FRI 05:00PM - 07:00PM VR408A");
+                    addCourseCheckBox("COM242  - GEITE01X: LIVING IN THE I.T. ERA | TUE 09:00AM - 11:00AM VR408B, FRI 09:00AM - 11:00AM VR408B");
+                    addCourseCheckBox("COM241 - GERIZ01X: LIFE AND WORKS OF RIZAL | TUE 03:00PM - 05:00PM VR408A, FRI 03:00PM - 05:00PM VR408A");
+                    addCourseCheckBox("COM242  - GERIZ01X: LIFE AND WORKS OF RIZAL | TUE 01:00PM - 03:00PM VR408C, FRI 01:00PM - 03:00PM VR408B");
+                    addCourseCheckBox("COM241 - MCFIT04X: PATHFit 4 | MON 04:00PM - 06:40PM Gymnasium2");
+                    addCourseCheckBox("COM242  - MCFIT04X: PATHFit 4 | THU 04:00PM - 06:40PM Gymnasium2");
                     break;
                 case "BS Information Technology":
-
-                    model.addElement("INF241 - CCDATRCL: DATA STRUCTURES AND ALGORITHMS | TUE 12:00PM - 04:00PM ROOM 505, FRI 01:00PM - 03:40PM ROOM 431");
-                    model.addElement("INF242 - CCDATRCL: DATA STRUCTURES AND ALGORITHMS | MON 12:00PM - 04:00PM ROOM 505, THU 01:00PM - 03:40PM ROOM 431");
-                    model.addElement("INF241 - CCPLTFRL: PLATFORM TECHNOLOGIES | MON 07:00AM - 09:40AM ROOM 431, THU 07:00AM - 11:00AM ROOM 505");
-                    model.addElement("INF242 - CCPLTFRL: PLATFORM TECHNOLOGIES | MON 01:00PM - 03:40PM ROOM 431, THU 12:00PM - 04:00PM ROOM 505");
-                    model.addElement("INF241 - GEFID01X: WIKA AT PANITIKAN SA PAGPAPATIBAY NG PILIPINONG IDENTIDAD | TUE 09:00AM - 11:00AM VR408A, FRI 09:00AM - 11:00AM ROOM 407");
-                    model.addElement("INF242 - GEFID01X: WIKA AT PANITIKAN SA PAGPAPATIBAY NG PILIPINONG IDENTIDAD | TUE 03:00PM - 05:00PM VR408C, FRI 03:00PM - 05:00PM ROOM 407");
-                    model.addElement("INF241 - GEITE01X: LIVING IN THE I.T. ERA | TUE 05:00PM - 07:00PM VR408A, FRI 05:00PM - 07:00PM VR408A");
-                    model.addElement("INF242 - GEITE01X: LIVING IN THE I.T. ERA | TUE 09:00AM - 11:00AM VR408B, FRI 09:00AM - 11:00AM VR408B");
-                    model.addElement("INF241 - GERIZ01X: LIFE AND WORKS OF RIZAL | TUE 03:00PM - 05:00PM VR408A, FRI 03:00PM - 05:00PM VR408A");
-                    model.addElement("INF242 - GERIZ01X: LIFE AND WORKS OF RIZAL | TUE 01:00PM - 03:00PM VR408C, FRI 01:00PM - 03:00PM VR408B");
-                    model.addElement("INF241 - MCFIT04X: PATHFit 4 | MON 04:00PM - 06:40PM Gymnasium2");
-                    model.addElement("INF242 - MCFIT04X: PATHFit 4 | THU 04:00PM - 06:40PM Gymnasium2");
-
+                    addCourseCheckBox("INF241 - CCDATRCL: DATA STRUCTURES AND ALGORITHMS | TUE 12:00PM - 04:00PM ROOM 505, FRI 01:00PM - 03:40PM ROOM 431");
+                    addCourseCheckBox("INF242 - CCDATRCL: DATA STRUCTURES AND ALGORITHMS | MON 12:00PM - 04:00PM ROOM 505, THU 01:00PM - 03:40PM ROOM 431");
+                    addCourseCheckBox("INF241 - CCPLTFRL: PLATFORM TECHNOLOGIES | MON 07:00AM - 09:40AM ROOM 431, THU 07:00AM - 11:00AM ROOM 505");
+                    addCourseCheckBox("INF242 - CCPLTFRL: PLATFORM TECHNOLOGIES | MON 01:00PM - 03:40PM ROOM 431, THU 12:00PM - 04:00PM ROOM 505");
+                    addCourseCheckBox("INF241 - GEFID01X: WIKA AT PANITIKAN SA PAGPAPATIBAY NG PILIPINONG IDENTIDAD | TUE 09:00AM - 11:00AM VR408A, FRI 09:00AM - 11:00AM ROOM 407");
+                    addCourseCheckBox("INF242 - GEFID01X: WIKA AT PANITIKAN SA PAGPAPATIBAY NG PILIPINONG IDENTIDAD | TUE 03:00PM - 05:00PM VR408C, FRI 03:00PM - 05:00PM ROOM 407");
+                    addCourseCheckBox("INF241 - GEITE01X: LIVING IN THE I.T. ERA | TUE 05:00PM - 07:00PM VR408A, FRI 05:00PM - 07:00PM VR408A");
+                    addCourseCheckBox("INF242 - GEITE01X: LIVING IN THE I.T. ERA | TUE 09:00AM - 11:00AM VR408B, FRI 09:00AM - 11:00AM VR408B");
+                    addCourseCheckBox("INF241 - GERIZ01X: LIFE AND WORKS OF RIZAL | TUE 03:00PM - 05:00PM VR408A, FRI 03:00PM - 05:00PM VR408A");
+                    addCourseCheckBox("INF242 - GERIZ01X: LIFE AND WORKS OF RIZAL | TUE 01:00PM - 03:00PM VR408C, FRI 01:00PM - 03:00PM VR408B");
+                    addCourseCheckBox("INF241 - MCFIT04X: PATHFit 4 | MON 04:00PM - 06:40PM Gymnasium2");
+                    addCourseCheckBox("INF242 - MCFIT04X: PATHFit 4 | THU 04:00PM - 06:40PM Gymnasium2");
                     break;
                 case "BS Computer Engineering":
-
-                    model.addElement("BSCE241  - CEEDRP1D: ENGINEERING DRAWING AND PLANS | MON 07:00AM - 11:00AM Room 521");
-                    model.addElement("BSCE242   - CEEDRP1D: ENGINEERING DRAWING AND PLANS | THU 07:00AM - 11:00AM Room 521");
-                    model.addElement("BSCE241  - CEORTN20: CIVIL ENGINEERING ORIENTATION | MON 03:00PM - 05:40PM VR407A");
-                    model.addElement("BSCE242   - CEORTN20: CIVIL ENGINEERING ORIENTATION | THU 12:20PM - 03:00PM VR405J");
-                    model.addElement("BSCE241  - ENITV12D: INTERVENTION FOR CALCULUS - DRAFTING | MON 01:00PM - 03:00PM ROOM 420, WED 01:00PM - 05:00PM Room 517, THU 01:00PM - 03:00PM ROOM 420");
-                    model.addElement("BSCE241    - ENITV21D: INTERVENTION FOR CHEMISTRY - DRAFTING | THU 07:00AM - 11:00AM Room 514");
-                    model.addElement("BSCE241  - GEETH01X: ETHICS | TUE 03:00PM - 05:00PM VR405C, FRI 03:00PM - 05:00PM VR405C");
-                    model.addElement("BSCE241    - GEMMW01X: MATHEMATICS IN THE MODERN WORLD | TUE 01:00PM - 03:00PM ROOM 419, FRI 01:00PM - 03:00PM ROOM 419");
-                    model.addElement("BSCE241  - GENAT01R: Nationalian Course | TUE 09:00AM - 11:00AM VR405B, FRI 09:00AM - 11:00AM VR405B");
-                    model.addElement("BSCE241    - GESTS01X: SCIENCE, TECHNOLOGY AND SOCIETY | TUE 07:00AM - 09:00AM VR405C, FRI 07:00AM - 09:00AM VR405B");
-
+                    addCourseCheckBox("CPE241 - CPORTN10: COMPUTER ENGINEERING ORIENTATION | MON 01:00PM - 02:20PM VR407M");
+                    addCourseCheckBox("CPE242 - CPORTN10: COMPUTER ENGINEERING ORIENTATION | TUE 01:00PM - 02:20PM VR407M");
+                    addCourseCheckBox("CPE241 - CPPROG2L: PROGRAMMING LOGIC AND DESIGN - LAB | TUE 11:00AM - 03:00PM ROOM 507, FRI 11:00AM - 03:00PM ROOM 507");
+                    addCourseCheckBox("CPE242 - CPPROG2L: PROGRAMMING LOGIC AND DESIGN - LAB | WED 11:00AM - 03:00PM ROOM 507, SAT 11:00AM - 03:00PM ROOM 507");
+                    addCourseCheckBox("CPE241 - ENITV12D: INTERVENTION FOR CALCULUS - DRAFTING | TUE 07:00AM - 11:00AM ROOM 425, FRI 07:00AM - 11:00AM ROOM 425");
+                    addCourseCheckBox("CPE242 - ENITV12D: INTERVENTION FOR CALCULUS - DRAFTING | WED 07:00AM - 11:00AM ROOM 425, SAT 07:00AM - 11:00AM ROOM 425");
+                    addCourseCheckBox("CPE241 - ENITV21D: INTERVENTION FOR CHEMISTRY - DRAFTING | SAT 07:00AM - 11:00AM Room 514");
+                    addCourseCheckBox("CPE242 - ENITV21D: INTERVENTION FOR CHEMISTRY - DRAFTING | MON 07:00AM - 11:00AM Room 514");
+                    addCourseCheckBox("CPE241 - ENITV31D: INTERVENTION FOR PHYSICS - DRAFTING | TUE 03:00PM - 07:00PM Room 517");
+                    addCourseCheckBox("CPE242 - ENITV31D: INTERVENTION FOR PHYSICS - DRAFTING | WED 03:00PM - 07:00PM Room 517");
+                    addCourseCheckBox("CPE241 - GEART01X: ART APPRECIATION | MON 09:00AM - 11:00AM VR410S, THU 09:00AM - 11:00AM VR407A");
+                    addCourseCheckBox("CPE242 - GEART01X: ART APPRECIATION | TUE 09:00AM - 11:00AM VR410S, FRI 09:00AM - 11:00AM VR407A");
+                    addCourseCheckBox("CPE241 - GEETH01X: ETHICS | MON 07:00AM - 09:00AM VR410S, THU 07:00AM - 09:00AM VR407A");
+                    addCourseCheckBox("CPE242 - GEETH01X: ETHICS | TUE 07:00AM - 09:00AM VR410S, FRI 07:00AM - 09:00AM VR407A");
+                    addCourseCheckBox("CPE241 - GEMMW01X: MATHEMATICS IN THE MODERN WORLD | WED 07:00AM - 11:00AM ROOM 406");
+                    addCourseCheckBox("CPE242 - GEMMW01X: MATHEMATICS IN THE MODERN WORLD | THU 07:00AM - 11:00AM ROOM 406");
+                    addCourseCheckBox("SECA-CPE241 - MCWTS01X: NATIONAL SERVICE TRAINING PROGRAM 1 | MON 03:00PM - 05:00PM VR405L, THU 03:00PM - 05:00PM VR407Z");
+                    addCourseCheckBox("SECA-CPE242 - MCWTS01X: NATIONAL SERVICE TRAINING PROGRAM 1 | TUE 03:00PM - 05:00PM VR405L, FRI 03:00PM - 05:00PM VR407Z");
                     break;
                 case "BS Architecture":
-
-                    model.addElement("ARCH241 - AALGTRIG: COLLEGE ALGEBRA AND PLANE TRIGONOMETRY | TUE 11:00AM - 01:00PM ROOM 432, FRI 11:00AM - 01:00PM ROOM 432");
-                    model.addElement("ARCH241 - AGRAPN1S: ARCHITECTURAL VISUAL COMM 1: GRAPHICS 1 | MON 07:00AM - 11:40AM Room 524, THU 07:00AM - 11:40AM Room 524");
-                    model.addElement("ARCH242 - AGRAPN1S: ARCHITECTURAL VISUAL COMM 1: GRAPHICS 1 | MON 01:00PM - 05:20PM Room 524, THU 01:00PM - 05:20PM Room 524");
-                    model.addElement("ARCH241 - ATHEORY1: THEORY OF ARCHITECTURE 1 | TUE 07:00AM - 09:40AM ROOM 409");
-                    model.addElement("ARCH241 - AVSTEN1S: ARCHITECTURAL VISUAL COMM 2: VISUAL TECHNIQUES 1 | MON 12:20PM - 05:40PM Room 541");
-                    model.addElement("ARCH242 - AVSTEN1S: ARCHITECTURAL VISUAL COMM 2: VISUAL TECHNIQUES 1 | MON 07:00AM - 12:20PM Room 542");
-                    model.addElement("ARCH241 - GEMMW01X: MATHEMATICS IN THE MODERN WORLD | TUE 01:00PM - 03:00PM ROOM 520, FRI 01:00PM - 03:00PM ROOM 520");
-                    model.addElement("ARCH241 - GENAT01R: Nationalian Course | TUE 03:00PM - 05:00PM VR407R, FRI 03:00PM - 05:00PM VR405B");
-                    model.addElement("ARCH241 - MNSTP01X: Civic Welfare Training Service 1 | WED 11:00AM - 03:00PM VR405B");
-
+                    addCourseCheckBox("ARCH241 - AALGTRIG: COLLEGE ALGEBRA AND PLANE TRIGONOMETRY | TUE 11:00AM - 01:00PM ROOM 432, FRI 11:00AM - 01:00PM ROOM 432");
+                    addCourseCheckBox("ARCH242 - AALGTRIG: COLLEGE ALGEBRA AND PLANE TRIGONOMETRY | WED 11:00AM - 01:00PM ROOM 432, SAT 11:00AM - 01:00PM ROOM 432");
+                    addCourseCheckBox("ARCH241 - AGRAPN1S: ARCHITECTURAL VISUAL COMM 1: GRAPHICS 1 | MON 07:00AM - 11:40AM Room 524, THU 07:00AM - 11:40AM Room 524");
+                    addCourseCheckBox("ARCH242 - AGRAPN1S: ARCHITECTURAL VISUAL COMM 1: GRAPHICS 1 | TUE 01:00PM - 05:20PM Room 524, FRI 01:00PM - 05:20PM Room 524");
+                    addCourseCheckBox("ARCH241 - ATHEORY1: THEORY OF ARCHITECTURE 1 | TUE 07:00AM - 09:40AM ROOM 409");
+                    addCourseCheckBox("ARCH242 - ATHEORY1: THEORY OF ARCHITECTURE 1 | WED 07:00AM - 09:40AM ROOM 409");
+                    addCourseCheckBox("ARCH241 - AVSTEN1S: ARCHITECTURAL VISUAL COMM 2: VISUAL TECHNIQUES 1 | MON 12:20PM - 05:40PM Room 541");
+                    addCourseCheckBox("ARCH242 - AVSTEN1S: ARCHITECTURAL VISUAL COMM 2: VISUAL TECHNIQUES 1 | TUE 12:20PM - 05:40PM Room 542");
+                    addCourseCheckBox("ARCH241 - GEMMW01X: MATHEMATICS IN THE MODERN WORLD | TUE 01:00PM - 03:00PM ROOM 520, FRI 01:00PM - 03:00PM ROOM 520");
+                    addCourseCheckBox("ARCH242 - GEMMW01X: MATHEMATICS IN THE MODERN WORLD | WED 01:00PM - 03:00PM ROOM 520, SAT 01:00PM - 03:00PM ROOM 520");
+                    addCourseCheckBox("ARCH241 - GENAT01R: Nationalian Course | TUE 03:00PM - 05:00PM VR407R, FRI 03:00PM - 05:00PM VR405B");
+                    addCourseCheckBox("ARCH242 - GENAT01R: Nationalian Course | WED 03:00PM - 05:00PM VR407R, SAT 03:00PM - 05:00PM VR405B");
+                    addCourseCheckBox("ARCH241 - MNSTP01X: Civic Welfare Training Service 1 | WED 11:00AM - 03:00PM VR405B");
+                    addCourseCheckBox("ARCH242 - MNSTP01X: Civic Welfare Training Service 1 | SAT 11:00AM - 03:00PM VR405B");
                     break;
                 case "BS Civil Engineering":
-
-                    model.addElement("CPE241 - CPORTN10: COMPUTER ENGINEERING ORIENTATION | MON 01:00PM - 02:20PM VR407M");
-                    model.addElement("CPE241 - CPPROG2L: PROGRAMMING LOGIC AND DESIGN - LAB | TUE 11:00AM - 03:00PM ROOM 507, FRI 11:00AM - 03:00PM ROOM 507");
-                    model.addElement("CPE241 - ENITV12D: INTERVENTION FOR CALCULUS - DRAFTING | TUE 07:00AM - 11:00AM ROOM 425, FRI 07:00AM - 11:00AM ROOM 425");
-                    model.addElement("CPE241 - ENITV21D: INTERVENTION FOR CHEMISTRY - DRAFTING | SAT 07:00AM - 11:00AM Room 514");
-                    model.addElement("CPE241 - ENITV31D: INTERVENTION FOR PHYSICS - DRAFTING | TUE 03:00PM - 07:00PM Room 517");
-                    model.addElement("CPE241 - GEART01X: ART APPRECIATION | MON 09:00AM - 11:00AM VR410S, THU 09:00AM - 11:00AM VR407A");
-                    model.addElement("CPE241 - GEETH01X: ETHICS | MON 07:00AM - 09:00AM VR410S, THU 07:00AM - 09:00AM VR407A");
-                    model.addElement("CPE241 - GEMMW01X: MATHEMATICS IN THE MODERN WORLD | WED 07:00AM - 11:00AM ROOM 406");
-                    model.addElement("SECA-CPE241 - MCWTS01X: NATIONAL SERVICE TRAINING PROGRAM 1 | MON 03:00PM - 05:00PM VR405L, THU 03:00PM - 05:00PM VR407Z");
-
+                    addCourseCheckBox("BSCE241 - CEEDRP1D: ENGINEERING DRAWING AND PLANS | MON 07:00AM - 11:00AM Room 521");
+                    addCourseCheckBox("BSCE242 - CEEDRP1D: ENGINEERING DRAWING AND PLANS | THU 07:00AM - 11:00AM Room 521");
+                    addCourseCheckBox("BSCE241 - CEORTN20: CIVIL ENGINEERING ORIENTATION | MON 03:00PM - 05:40PM VR407A");
+                    addCourseCheckBox("BSCE242 - CEORTN20: CIVIL ENGINEERING ORIENTATION | THU 12:20PM - 03:00PM VR405J");
+                    addCourseCheckBox("BSCE241 - ENITV12D: INTERVENTION FOR CALCULUS - DRAFTING | MON 01:00PM - 03:00PM ROOM 420, WED 01:00PM - 05:00PM Room 517, THU 01:00PM - 03:00PM ROOM 420");
+                    addCourseCheckBox("BSCE242 - ENITV12D: INTERVENTION FOR CALCULUS - DRAFTING | TUE 01:00PM - 03:00PM ROOM 420, FRI 01:00PM - 05:00PM Room 517, THU 03:00PM - 05:00PM ROOM 420");
+                    addCourseCheckBox("BSCE241 - ENITV21D: INTERVENTION FOR CHEMISTRY - DRAFTING | THU 07:00AM - 11:00AM Room 514");
+                    addCourseCheckBox("BSCE242 - ENITV21D: INTERVENTION FOR CHEMISTRY - DRAFTING | FRI 07:00AM - 11:00AM Room 514");
+                    addCourseCheckBox("BSCE241 - GEETH01X: ETHICS | TUE 03:00PM - 05:00PM VR405C, FRI 03:00PM - 05:00PM VR405C");
+                    addCourseCheckBox("BSCE242 - GEETH01X: ETHICS | WED 03:00PM - 05:00PM VR405C, SAT 03:00PM - 05:00PM VR405C");
+                    addCourseCheckBox("BSCE241 - GEMMW01X: MATHEMATICS IN THE MODERN WORLD | TUE 01:00PM - 03:00PM ROOM 419, FRI 01:00PM - 03:00PM ROOM 419");
+                    addCourseCheckBox("BSCE242 - GEMMW01X: MATHEMATICS IN THE MODERN WORLD | WED 01:00PM - 03:00PM ROOM 419, SAT 01:00PM - 03:00PM ROOM 419");
+                    addCourseCheckBox("BSCE241 - GENAT01R: Nationalian Course | TUE 09:00AM - 11:00AM VR405B, FRI 09:00AM - 11:00AM VR405B");
+                    addCourseCheckBox("BSCE242 - GENAT01R: Nationalian Course | WED 09:00AM - 11:00AM VR405B, SAT 09:00AM - 11:00AM VR405B");
+                    addCourseCheckBox("BSCE241 - GESTS01X: SCIENCE, TECHNOLOGY AND SOCIETY | TUE 07:00AM - 09:00AM VR405C, FRI 07:00AM - 09:00AM VR405B");
+                    addCourseCheckBox("BSCE242 - GESTS01X: SCIENCE, TECHNOLOGY AND SOCIETY | WED 07:00AM - 09:00AM VR405C, SAT 07:00AM - 09:00AM VR405B");
                     break;
             }
+        } else {
+            JLabel noCourseLabel = new JLabel("Select a course first");
+            noCourseLabel.setFont(new Font("Inter", Font.PLAIN, 14));
+            schedulePanel.add(noCourseLabel);
         }
-        
-        if (model.size() == 0) {
-            model.addElement("Select a course first");
+        schedulePanel.revalidate();
+        schedulePanel.repaint();
+    }
+
+    private boolean isDuplicateCourse(String newCourse) {
+        try {
+            String newCourseSubject = newCourse.split(" - ")[1].split(":")[0].trim();
+            
+            for (JCheckBox checkBox : courseCheckBoxes.values()) {
+                if (checkBox.isSelected()) {
+                    String existingCourse = checkBox.getText();
+                    String existingSubject = existingCourse.split(" - ")[1].split(":")[0].trim();
+                    
+                    if (existingSubject.equals(newCourseSubject)) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        } catch (Exception e) {
+            System.err.println("Error checking for duplicate courses: " + e.getMessage());
+            return false;
         }
+    }
+
+    private boolean hasOverlappingSchedules(String newSchedule, String existingSchedules) {
+        try {
+            if (existingSchedules.isEmpty()) return false;
+            
+            // Split the new schedule into individual time slots
+            String[] newTimeSlots = newSchedule.split(", ");
+            
+            // Split existing schedules into individual entries
+            String[] existingEntries = existingSchedules.split(", ");
+            
+            for (String newSlot : newTimeSlots) {
+                for (String existingSlot : existingEntries) {
+                    // Extract days and times
+                    String[] newParts = newSlot.split(" ");
+                    String[] existingParts = existingSlot.split(" ");
+                    
+                    if (newParts.length >= 3 && existingParts.length >= 3) {
+                        String newDay = newParts[0];
+                        String existingDay = existingParts[0];
+                        
+                        // Check if days overlap
+                        if (newDay.equals(existingDay)) {
+                            // Extract times
+                            String newTime = newParts[1] + " " + newParts[2];
+                            String existingTime = existingParts[1] + " " + existingParts[2];
+                            
+                            // Simple time overlap check 
+                            if (newTime.equals(existingTime)) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return false;
+        } catch (Exception e) {
+            System.err.println("Error checking for schedule overlaps: " + e.getMessage());
+            return false;
+        }
+    }
+
+    private void addCourseCheckBox(String course) {
+        String courseCode = course.split(" - ")[0].trim();
+        String courseSubject = course.split(" - ")[1].split(":")[0].trim();
+        String schedule = course.split("\\|")[1].trim();
         
-        scheduleList.setModel(model);
+        JCheckBox checkBox = new JCheckBox(course);
+        checkBox.setFont(new Font("Inter", Font.PLAIN, 14));
+        checkBox.setBackground(new Color(230, 230, 230));
+        checkBox.setFocusPainted(false);
+        
+        // Add action listener to handle schedule conflicts only
+        checkBox.addActionListener(e -> {
+            if (checkBox.isSelected()) {
+                // Check for schedule conflicts only
+                for (Map.Entry<String, JCheckBox> entry : courseCheckBoxes.entrySet()) {
+                    if (entry.getValue().isSelected() && !entry.getValue().equals(checkBox)) {
+                        String existingCourse = entry.getValue().getText();
+                        String existingSchedule = existingCourse.split("\\|")[1].trim();
+                        String[] newSlots = schedule.split(", ");
+                        String[] existingSlots = existingSchedule.split(", ");
+                        
+                        for (String newSlot : newSlots) {
+                            for (String existingSlot : existingSlots) {
+                                String[] newParts = newSlot.split(" ");
+                                String[] existingParts = existingSlot.split(" ");
+                                if (newParts.length >= 3 && existingParts.length >= 3) {
+                                    if (newParts[0].equals(existingParts[0])) {
+                                        String newTime = newParts[1] + " " + newParts[2];
+                                        String existingTime = existingParts[1] + " " + existingParts[2];
+                                        if (newTime.equals(existingTime)) {
+                                            checkBox.setSelected(false);
+                                            showError("Schedule conflict detected. This course overlaps with another selected course.");
+                                            return;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Store the checkbox with a unique key that includes both course code and subject
+        String uniqueKey = courseCode + "_" + courseSubject;
+        courseCheckBoxes.put(uniqueKey, checkBox);
+        schedulePanel.add(checkBox);
     }
 
     // Method to show full schedule list
@@ -678,10 +789,121 @@ private void initializeUI() {
             createFullListDialog();
         }
         
-        // Update the full list with current data
-        JList<String> fullList = (JList<String>)((JScrollPane)fullListDialog.getContentPane().getComponent(0)).getViewport().getView();
-        fullList.setModel(scheduleList.getModel());
-        fullList.setSelectedIndices(getSelectedIndices(scheduleList));
+        DefaultListModel<String> model = new DefaultListModel<>();
+        
+        String selectedProgram = (String) courseBox.getSelectedItem();
+        if (selectedProgram == null) {
+            model.addElement("Please select a program first");
+        } else {
+            model.addElement(selectedProgram + " Courses:");
+            
+            // Get all courses for the selected program
+            List<String> allCourses = new ArrayList<>();
+            switch (selectedProgram) {
+                case "BS Computer Science":
+                    allCourses.add("COM241 - CCDATRCL: DATA STRUCTURES AND ALGORITHMS | TUE 12:00PM - 04:00PM ROOM 505, FRI 01:00PM - 03:40PM ROOM 431");
+                    allCourses.add("COM242 - CCDATRCL: DATA STRUCTURES AND ALGORITHMS | MON 12:00PM - 04:00PM ROOM 505, THU 01:00PM - 03:40PM ROOM 431");
+                    allCourses.add("COM241 - CCPLTFRL: PLATFORM TECHNOLOGIES | MON 07:00AM - 09:40AM ROOM 431, THU 07:00AM - 11:00AM ROOM 505");
+                    allCourses.add("COM242 - CCPLTFRL: PLATFORM TECHNOLOGIES | MON 01:00PM - 03:40PM ROOM 431, THU 12:00PM - 04:00PM ROOM 505");
+                    allCourses.add("COM241 - GEFID01X: WIKA AT PANITIKAN SA PAGPAPATIBAY NG PILIPINONG IDENTIDAD | TUE 09:00AM - 11:00AM VR408A, FRI 09:00AM - 11:00AM ROOM 407");
+                    allCourses.add("COM242 - GEFID01X: WIKA AT PANITIKAN SA PAGPAPATIBAY NG PILIPINONG IDENTIDAD | TUE 03:00PM - 05:00PM VR408C, FRI 03:00PM - 05:00PM ROOM 407");
+                    allCourses.add("COM241 - GEITE01X: LIVING IN THE I.T. ERA | TUE 05:00PM - 07:00PM VR408A, FRI 05:00PM - 07:00PM VR408A");
+                    allCourses.add("COM242 - GEITE01X: LIVING IN THE I.T. ERA | TUE 09:00AM - 11:00AM VR408B, FRI 09:00AM - 11:00AM VR408B");
+                    allCourses.add("COM241 - GERIZ01X: LIFE AND WORKS OF RIZAL | TUE 03:00PM - 05:00PM VR408A, FRI 03:00PM - 05:00PM VR408A");
+                    allCourses.add("COM242 - GERIZ01X: LIFE AND WORKS OF RIZAL | TUE 01:00PM - 03:00PM VR408C, FRI 01:00PM - 03:00PM VR408B");
+                    allCourses.add("COM241 - MCFIT04X: PATHFit 4 | MON 04:00PM - 06:40PM Gymnasium2");
+                    allCourses.add("COM242 - MCFIT04X: PATHFit 4 | THU 04:00PM - 06:40PM Gymnasium2");
+                    break;
+                case "BS Information Technology":
+                    allCourses.add("INF241 - CCDATRCL: DATA STRUCTURES AND ALGORITHMS | TUE 12:00PM - 04:00PM ROOM 505, FRI 01:00PM - 03:40PM ROOM 431");
+                    allCourses.add("INF242 - CCDATRCL: DATA STRUCTURES AND ALGORITHMS | MON 12:00PM - 04:00PM ROOM 505, THU 01:00PM - 03:40PM ROOM 431");
+                    allCourses.add("INF241 - CCPLTFRL: PLATFORM TECHNOLOGIES | MON 07:00AM - 09:40AM ROOM 431, THU 07:00AM - 11:00AM ROOM 505");
+                    allCourses.add("INF242 - CCPLTFRL: PLATFORM TECHNOLOGIES | MON 01:00PM - 03:40PM ROOM 431, THU 12:00PM - 04:00PM ROOM 505");
+                    allCourses.add("INF241 - GEFID01X: WIKA AT PANITIKAN SA PAGPAPATIBAY NG PILIPINONG IDENTIDAD | TUE 09:00AM - 11:00AM VR408A, FRI 09:00AM - 11:00AM ROOM 407");
+                    allCourses.add("INF242 - GEFID01X: WIKA AT PANITIKAN SA PAGPAPATIBAY NG PILIPINONG IDENTIDAD | TUE 03:00PM - 05:00PM VR408C, FRI 03:00PM - 05:00PM ROOM 407");
+                    allCourses.add("INF241 - GEITE01X: LIVING IN THE I.T. ERA | TUE 05:00PM - 07:00PM VR408A, FRI 05:00PM - 07:00PM VR408A");
+                    allCourses.add("INF242 - GEITE01X: LIVING IN THE I.T. ERA | TUE 09:00AM - 11:00AM VR408B, FRI 09:00AM - 11:00AM VR408B");
+                    allCourses.add("INF241 - GERIZ01X: LIFE AND WORKS OF RIZAL | TUE 03:00PM - 05:00PM VR408A, FRI 03:00PM - 05:00PM VR408A");
+                    allCourses.add("INF242 - GERIZ01X: LIFE AND WORKS OF RIZAL | TUE 01:00PM - 03:00PM VR408C, FRI 01:00PM - 03:00PM VR408B");
+                    allCourses.add("INF241 - MCFIT04X: PATHFit 4 | MON 04:00PM - 06:40PM Gymnasium2");
+                    allCourses.add("INF242 - MCFIT04X: PATHFit 4 | THU 04:00PM - 06:40PM Gymnasium2");
+                    break;
+                case "BS Computer Engineering":
+                    allCourses.add("CPE241 - CPORTN10: COMPUTER ENGINEERING ORIENTATION | MON 01:00PM - 02:20PM VR407M");
+                    allCourses.add("CPE242 - CPORTN10: COMPUTER ENGINEERING ORIENTATION | TUE 01:00PM - 02:20PM VR407M");
+                    allCourses.add("CPE241 - CPPROG2L: PROGRAMMING LOGIC AND DESIGN - LAB | TUE 11:00AM - 03:00PM ROOM 507, FRI 11:00AM - 03:00PM ROOM 507");
+                    allCourses.add("CPE242 - CPPROG2L: PROGRAMMING LOGIC AND DESIGN - LAB | WED 11:00AM - 03:00PM ROOM 507, SAT 11:00AM - 03:00PM ROOM 507");
+                    allCourses.add("CPE241 - ENITV12D: INTERVENTION FOR CALCULUS - DRAFTING | TUE 07:00AM - 11:00AM ROOM 425, FRI 07:00AM - 11:00AM ROOM 425");
+                    allCourses.add("CPE242 - ENITV12D: INTERVENTION FOR CALCULUS - DRAFTING | WED 07:00AM - 11:00AM ROOM 425, SAT 07:00AM - 11:00AM ROOM 425");
+                    allCourses.add("CPE241 - ENITV21D: INTERVENTION FOR CHEMISTRY - DRAFTING | SAT 07:00AM - 11:00AM Room 514");
+                    allCourses.add("CPE242 - ENITV21D: INTERVENTION FOR CHEMISTRY - DRAFTING | MON 07:00AM - 11:00AM Room 514");
+                    allCourses.add("CPE241 - ENITV31D: INTERVENTION FOR PHYSICS - DRAFTING | TUE 03:00PM - 07:00PM Room 517");
+                    allCourses.add("CPE242 - ENITV31D: INTERVENTION FOR PHYSICS - DRAFTING | WED 03:00PM - 07:00PM Room 517");
+                    allCourses.add("CPE241 - GEART01X: ART APPRECIATION | MON 09:00AM - 11:00AM VR410S, THU 09:00AM - 11:00AM VR407A");
+                    allCourses.add("CPE242 - GEART01X: ART APPRECIATION | TUE 09:00AM - 11:00AM VR410S, FRI 09:00AM - 11:00AM VR407A");
+                    allCourses.add("CPE241 - GEETH01X: ETHICS | MON 07:00AM - 09:00AM VR410S, THU 07:00AM - 09:00AM VR407A");
+                    allCourses.add("CPE242 - GEETH01X: ETHICS | TUE 07:00AM - 09:00AM VR410S, FRI 07:00AM - 09:00AM VR407A");
+                    allCourses.add("CPE241 - GEMMW01X: MATHEMATICS IN THE MODERN WORLD | WED 07:00AM - 11:00AM ROOM 406");
+                    allCourses.add("CPE242 - GEMMW01X: MATHEMATICS IN THE MODERN WORLD | THU 07:00AM - 11:00AM ROOM 406");
+                    allCourses.add("SECA-CPE241 - MCWTS01X: NATIONAL SERVICE TRAINING PROGRAM 1 | MON 03:00PM - 05:00PM VR405L, THU 03:00PM - 05:00PM VR407Z");
+                    allCourses.add("SECA-CPE242 - MCWTS01X: NATIONAL SERVICE TRAINING PROGRAM 1 | TUE 03:00PM - 05:00PM VR405L, FRI 03:00PM - 05:00PM VR407Z");
+                    break;
+                case "BS Architecture":
+                    allCourses.add("ARCH241 - AALGTRIG: COLLEGE ALGEBRA AND PLANE TRIGONOMETRY | TUE 11:00AM - 01:00PM ROOM 432, FRI 11:00AM - 01:00PM ROOM 432");
+                    allCourses.add("ARCH242 - AALGTRIG: COLLEGE ALGEBRA AND PLANE TRIGONOMETRY | WED 11:00AM - 01:00PM ROOM 432, SAT 11:00AM - 01:00PM ROOM 432");
+                    allCourses.add("ARCH241 - AGRAPN1S: ARCHITECTURAL VISUAL COMM 1: GRAPHICS 1 | MON 07:00AM - 11:40AM Room 524, THU 07:00AM - 11:40AM Room 524");
+                    allCourses.add("ARCH242 - AGRAPN1S: ARCHITECTURAL VISUAL COMM 1: GRAPHICS 1 | TUE 01:00PM - 05:20PM Room 524, FRI 01:00PM - 05:20PM Room 524");
+                    allCourses.add("ARCH241 - ATHEORY1: THEORY OF ARCHITECTURE 1 | TUE 07:00AM - 09:40AM ROOM 409");
+                    allCourses.add("ARCH242 - ATHEORY1: THEORY OF ARCHITECTURE 1 | WED 07:00AM - 09:40AM ROOM 409");
+                    allCourses.add("ARCH241 - AVSTEN1S: ARCHITECTURAL VISUAL COMM 2: VISUAL TECHNIQUES 1 | MON 12:20PM - 05:40PM Room 541");
+                    allCourses.add("ARCH242 - AVSTEN1S: ARCHITECTURAL VISUAL COMM 2: VISUAL TECHNIQUES 1 | TUE 12:20PM - 05:40PM Room 542");
+                    allCourses.add("ARCH241 - GEMMW01X: MATHEMATICS IN THE MODERN WORLD | TUE 01:00PM - 03:00PM ROOM 520, FRI 01:00PM - 03:00PM ROOM 520");
+                    allCourses.add("ARCH242 - GEMMW01X: MATHEMATICS IN THE MODERN WORLD | WED 01:00PM - 03:00PM ROOM 520, SAT 01:00PM - 03:00PM ROOM 520");
+                    allCourses.add("ARCH241 - GENAT01R: Nationalian Course | TUE 03:00PM - 05:00PM VR407R, FRI 03:00PM - 05:00PM VR405B");
+                    allCourses.add("ARCH242 - GENAT01R: Nationalian Course | WED 03:00PM - 05:00PM VR407R, SAT 03:00PM - 05:00PM VR405B");
+                    allCourses.add("ARCH241 - MNSTP01X: Civic Welfare Training Service 1 | WED 11:00AM - 03:00PM VR405B");
+                    allCourses.add("ARCH242 - MNSTP01X: Civic Welfare Training Service 1 | SAT 11:00AM - 03:00PM VR405B");
+                    break;
+                case "BS Civil Engineering":
+                    allCourses.add("BSCE241 - CEEDRP1D: ENGINEERING DRAWING AND PLANS | MON 07:00AM - 11:00AM Room 521");
+                    allCourses.add("BSCE242 - CEEDRP1D: ENGINEERING DRAWING AND PLANS | THU 07:00AM - 11:00AM Room 521");
+                    allCourses.add("BSCE241 - CEORTN20: CIVIL ENGINEERING ORIENTATION | MON 03:00PM - 05:40PM VR407A");
+                    allCourses.add("BSCE242 - CEORTN20: CIVIL ENGINEERING ORIENTATION | THU 12:20PM - 03:00PM VR405J");
+                    allCourses.add("BSCE241 - ENITV12D: INTERVENTION FOR CALCULUS - DRAFTING | MON 01:00PM - 03:00PM ROOM 420, WED 01:00PM - 05:00PM Room 517, THU 01:00PM - 03:00PM ROOM 420");
+                    allCourses.add("BSCE242 - ENITV12D: INTERVENTION FOR CALCULUS - DRAFTING | TUE 01:00PM - 03:00PM ROOM 420, FRI 01:00PM - 05:00PM Room 517, THU 03:00PM - 05:00PM ROOM 420");
+                    allCourses.add("BSCE241 - ENITV21D: INTERVENTION FOR CHEMISTRY - DRAFTING | THU 07:00AM - 11:00AM Room 514");
+                    allCourses.add("BSCE242 - ENITV21D: INTERVENTION FOR CHEMISTRY - DRAFTING | FRI 07:00AM - 11:00AM Room 514");
+                    allCourses.add("BSCE241 - GEETH01X: ETHICS | TUE 03:00PM - 05:00PM VR405C, FRI 03:00PM - 05:00PM VR405C");
+                    allCourses.add("BSCE242 - GEETH01X: ETHICS | WED 03:00PM - 05:00PM VR405C, SAT 03:00PM - 05:00PM VR405C");
+                    allCourses.add("BSCE241 - GEMMW01X: MATHEMATICS IN THE MODERN WORLD | TUE 01:00PM - 03:00PM ROOM 419, FRI 01:00PM - 03:00PM ROOM 419");
+                    allCourses.add("BSCE242 - GEMMW01X: MATHEMATICS IN THE MODERN WORLD | WED 01:00PM - 03:00PM ROOM 419, SAT 01:00PM - 03:00PM ROOM 419");
+                    allCourses.add("BSCE241 - GENAT01R: Nationalian Course | TUE 09:00AM - 11:00AM VR405B, FRI 09:00AM - 11:00AM VR405B");
+                    allCourses.add("BSCE242 - GENAT01R: Nationalian Course | WED 09:00AM - 11:00AM VR405B, SAT 09:00AM - 11:00AM VR405B");
+                    allCourses.add("BSCE241 - GESTS01X: SCIENCE, TECHNOLOGY AND SOCIETY | TUE 07:00AM - 09:00AM VR405C, FRI 07:00AM - 09:00AM VR405B");
+                    allCourses.add("BSCE242 - GESTS01X: SCIENCE, TECHNOLOGY AND SOCIETY | WED 07:00AM - 09:00AM VR405C, SAT 07:00AM - 09:00AM VR405B");
+                    break;
+            }
+            
+            // Add all courses to the model
+            for (String course : allCourses) {
+                model.addElement(course);
+            }
+        }
+        
+        fullList.setModel(model);
+        
+        // Update selected items based on checked boxes
+        List<Integer> selectedIndices = new ArrayList<>();
+        for (int i = 0; i < model.size(); i++) {
+            String course = model.getElementAt(i);
+            if (!course.endsWith("Courses:")) {
+                String courseCode = course.split(" - ")[0].trim();
+                if (courseCheckBoxes.containsKey(courseCode) && courseCheckBoxes.get(courseCode).isSelected()) {
+                    selectedIndices.add(i);
+                }
+            }
+        }
+        fullList.setSelectedIndices(selectedIndices.stream().mapToInt(i -> i).toArray());
         
         fullListDialog.setVisible(true);
     }
@@ -690,29 +912,101 @@ private void initializeUI() {
     private void createFullListDialog() {
         fullListDialog = new JDialog();
         fullListDialog.setTitle("Full Schedule List");
-        fullListDialog.setModal(false); // Non-modal so user can interact with main window
-        fullListDialog.setSize(600, 500); // Larger size for better viewing
+        fullListDialog.setModal(false);
+        fullListDialog.setSize(900, 600);
         fullListDialog.setLayout(new BorderLayout());
-        fullListDialog.setLocationRelativeTo(null); // Center on screen
+        fullListDialog.setLocationRelativeTo(null);
 
-        // Create a list for the dialog with all schedules
-        JList<String> fullList = new JList<>();
-        
-        // Apply consistent styling with your original list
+        // Create header panel with column labels
+        JPanel headerPanel = new JPanel(new GridLayout(1, 3, 10, 0));
+        headerPanel.setBackground(new Color(102, 126, 234));
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JLabel courseLabel = new JLabel("Course Code & Subject");
+        JLabel scheduleLabel = new JLabel("Schedule");
+        JLabel roomLabel = new JLabel("Room");
+
+        // Style the headers
+        Font headerFont = new Font("Inter", Font.BOLD, 14);
+        courseLabel.setFont(headerFont);
+        scheduleLabel.setFont(headerFont);
+        roomLabel.setFont(headerFont);
+        courseLabel.setForeground(Color.WHITE);
+        scheduleLabel.setForeground(Color.WHITE);
+        roomLabel.setForeground(Color.WHITE);
+
+        headerPanel.add(courseLabel);
+        headerPanel.add(scheduleLabel);
+        headerPanel.add(roomLabel);
+
+        fullListDialog.add(headerPanel, BorderLayout.NORTH);
+
+        // Create the list with custom renderer
+        fullList = new JList<>();
         fullList.setFont(new Font("Inter", Font.PLAIN, 14));
         fullList.setSelectionBackground(new Color(102, 126, 234));
         fullList.setSelectionForeground(Color.WHITE);
         fullList.setLayoutOrientation(JList.VERTICAL);
-        fullList.setFixedCellHeight(25);
-        fullList.setBackground(new Color(230, 230, 230));
+        fullList.setFixedCellHeight(50);
+        fullList.setBackground(new Color(240, 240, 240));
         fullList.setForeground(Color.BLACK);
         fullList.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         fullList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         fullList.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        fullList.setFocusable(true); // Allow focus in dialog
-        fullList.setVisibleRowCount(-1); // Show all items
-        
-        // Add to scroll pane with nice border
+
+        // Custom cell renderer
+        fullList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                JPanel panel = new JPanel(new GridLayout(1, 3, 10, 0));
+                panel.setBackground(isSelected ? list.getSelectionBackground() : list.getBackground());
+                panel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+
+                if (value instanceof String) {
+                    String text = (String) value;
+                    if (text.endsWith("Courses:")) {
+                        // Header style
+                        JLabel headerLabel = new JLabel(text);
+                        headerLabel.setFont(new Font("Inter", Font.BOLD, 16));
+                        headerLabel.setForeground(new Color(102, 126, 234));
+                        panel.setLayout(new BorderLayout());
+                        panel.add(headerLabel, BorderLayout.CENTER);
+                        panel.setBackground(list.getBackground());
+                    } else {
+                        // Course item style
+                        String[] parts = text.split("\\|");
+                        if (parts.length >= 2) {
+                            String courseInfo = parts[0].trim();
+                            String scheduleInfo = parts[1].trim();
+
+                            // Split schedule info
+                            String[] scheduleParts = scheduleInfo.split("ROOM");
+                            String time = scheduleParts[0].trim();
+                            String room = scheduleParts.length > 1 ? "ROOM " + scheduleParts[1].trim() : "";
+
+                            JLabel courseLabel = new JLabel(courseInfo);
+                            JLabel timeLabel = new JLabel(time);
+                            JLabel roomLabel = new JLabel(room);
+
+                            courseLabel.setFont(new Font("Inter", Font.PLAIN, 14));
+                            timeLabel.setFont(new Font("Inter", Font.PLAIN, 14));
+                            roomLabel.setFont(new Font("Inter", Font.PLAIN, 14));
+
+                            courseLabel.setForeground(isSelected ? Color.WHITE : Color.BLACK);
+                            timeLabel.setForeground(isSelected ? Color.WHITE : Color.BLACK);
+                            roomLabel.setForeground(isSelected ? Color.WHITE : Color.BLACK);
+
+                            panel.add(courseLabel);
+                            panel.add(timeLabel);
+                            panel.add(roomLabel);
+                        }
+                    }
+                }
+
+                return panel;
+            }
+        });
+
         JScrollPane fullScrollPane = new JScrollPane(fullList);
         fullScrollPane.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createEmptyBorder(10, 10, 10, 10),
@@ -720,28 +1014,31 @@ private void initializeUI() {
         ));
         fullListDialog.add(fullScrollPane, BorderLayout.CENTER);
         
-        // Add button panel with "Apply" and "Close"
+        // Add close button
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 10));
-        
-        JButton applyButton = new JButton("Apply Selections");
-        applyButton.setFont(new Font("Inter", Font.PLAIN, 12));
-        applyButton.setBackground(new Color(102, 126, 234));
-        applyButton.setForeground(Color.WHITE);
-        applyButton.addActionListener(e -> {
-            scheduleList.setSelectedIndices(fullList.getSelectedIndices());
-            fullListDialog.setVisible(false);
-        });
         
         JButton closeButton = new JButton("Close");
         closeButton.setFont(new Font("Inter", Font.PLAIN, 12));
         closeButton.addActionListener(e -> fullListDialog.setVisible(false));
         
-        buttonPanel.add(applyButton);
-        buttonPanel.add(Box.createHorizontalStrut(10));
         buttonPanel.add(closeButton);
-        
         fullListDialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Add selection listener
+        fullList.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                for (int i = 0; i < fullList.getModel().getSize(); i++) {
+                    String course = fullList.getModel().getElementAt(i);
+                    if (!course.endsWith("Courses:")) {
+                        String courseCode = course.split(" - ")[0].trim();
+                        if (courseCheckBoxes.containsKey(courseCode)) {
+                            courseCheckBoxes.get(courseCode).setSelected(fullList.isSelectedIndex(i));
+                        }
+                    }
+                }
+            }
+        });
     }
 
     // Helper to get selected indices
@@ -759,9 +1056,16 @@ private void initializeUI() {
         return indices.stream().mapToInt(i -> i).toArray();
     }
 
-    // To get selected schedules later:
+    // Modify getSelectedSchedules to handle multiple selections
     public List<String> getSelectedSchedules() {
-        return scheduleList.getSelectedValuesList();
+        List<String> selectedSchedules = new ArrayList<>();
+        for (JCheckBox checkBox : courseCheckBoxes.values()) {
+            if (checkBox.isSelected()) {
+                selectedSchedules.add(checkBox.getText());
+                System.out.println("Selected: " + checkBox.getText()); // Debug output
+            }
+        }
+        return selectedSchedules;
     }
 
     private void addPlaceholderBehavior(JTextField field, String placeholder) {
@@ -875,7 +1179,7 @@ private void initializeUI() {
     }
 
     private boolean validateForm() {
-        // Check required fields
+
         if (firstNameField.getText().trim().isEmpty()) {
             showError("First Name is required");
             return false;
@@ -930,42 +1234,83 @@ private void initializeUI() {
             return false;
         }
 
+        // Check for schedule conflicts only
+        List<String> selectedSchedules = getSelectedSchedules();
+        if (selectedSchedules.isEmpty()) {
+            showError("Please select at least one course schedule");
+                    return false;
+                }
+                
+        // Check for schedule conflicts
+        for (int i = 0; i < selectedSchedules.size(); i++) {
+            for (int j = i + 1; j < selectedSchedules.size(); j++) {
+                String schedule1 = selectedSchedules.get(i).split("\\|")[1].trim();
+                String schedule2 = selectedSchedules.get(j).split("\\|")[1].trim();
+                
+                String[] slots1 = schedule1.split(", ");
+                String[] slots2 = schedule2.split(", ");
+                
+                for (String slot1 : slots1) {
+                    for (String slot2 : slots2) {
+                        String[] parts1 = slot1.split(" ");
+                        String[] parts2 = slot2.split(" ");
+                        if (parts1.length >= 3 && parts2.length >= 3) {
+                            if (parts1[0].equals(parts2[0])) {
+                                String time1 = parts1[1] + " " + parts1[2];
+                                String time2 = parts2[1] + " " + parts2[2];
+                                if (time1.equals(time2)) {
+                                    showError("Schedule conflict detected between selected courses.");
+                    return false;
+                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         return true;
     }
 
     
     private void insertStudent() {
-    try {
-        generatedStudentId = generateStudentId();
-        generatedStudentEmail = generateStudentEmail();
-        
-        String sql = "INSERT INTO students (student_id, first_name, middle_name, last_name, date_of_birth, gender, " +
-                     "civil_status, nationality, contact_number, address, guardian_name, " +
-                     "guardian_contact, password, student_email, student_course, student_schedule) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        
-        PreparedStatement stmt = conn.prepareStatement(sql);
-        stmt.setString(1, generatedStudentId);
-        stmt.setString(2, firstNameField.getText().trim());
-        stmt.setString(3, middleNameField.getText().trim());
-        stmt.setString(4, lastNameField.getText().trim());
-        stmt.setString(5, dobField.getText().trim());
-        stmt.setString(6, (String) genderBox.getSelectedItem());
-        stmt.setString(7, (String) civilStatusBox.getSelectedItem());
-        stmt.setString(8, nationalityField.getText().trim());
-        stmt.setString(9, contactField.getText().trim());
-        stmt.setString(10, addressField.getText().trim());
-        stmt.setString(11, guardianField.getText().trim());
-        stmt.setString(12, guardianContactField.getText().trim());
-        stmt.setString(13, new String(passwordField.getPassword()));
-        stmt.setString(14, generatedStudentEmail);
-        stmt.setString(15, (String) courseBox.getSelectedItem());
-        stmt.setString(16, String.join(", ", getSelectedSchedules()));
+        try {
+            generatedStudentId = generateStudentId();
+            generatedStudentEmail = generateStudentEmail();
+            
+            List<String> selectedSchedules = getSelectedSchedules();
+            if (selectedSchedules.isEmpty()) {
+                showError("Please select at least one course schedule");
+                return;
+            }
+            
+            String schedulesString = String.join("|||", selectedSchedules);
+            System.out.println("DEBUG: schedulesString to save: " + schedulesString);
+            
+            String sql = "INSERT INTO students (student_id, first_name, middle_name, last_name, date_of_birth, gender, " +
+                       "civil_status, nationality, contact_number, address, guardian_name, " +
+                       "guardian_contact, password, student_email, student_course, student_schedule) " +
+                       "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, generatedStudentId);
+            stmt.setString(2, firstNameField.getText().trim());
+            stmt.setString(3, middleNameField.getText().trim());
+            stmt.setString(4, lastNameField.getText().trim());
+            stmt.setString(5, dobField.getText().trim());
+            stmt.setString(6, (String) genderBox.getSelectedItem());
+            stmt.setString(7, (String) civilStatusBox.getSelectedItem());
+            stmt.setString(8, nationalityField.getText().trim());
+            stmt.setString(9, contactField.getText().trim());
+            stmt.setString(10, addressField.getText().trim());
+            stmt.setString(11, guardianField.getText().trim());
+            stmt.setString(12, guardianContactField.getText().trim());
+            stmt.setString(13, new String(passwordField.getPassword()));
+            stmt.setString(14, generatedStudentEmail);
+            stmt.setString(15, (String) courseBox.getSelectedItem());
+            stmt.setString(16, schedulesString);
 
-        System.out.println(courseBox.getSelectedItem());
-
-        int result = stmt.executeUpdate();
-        stmt.close();
+            int result = stmt.executeUpdate();
             if (result > 0) {
                 showScheduleSelection(generatedStudentId, generatedStudentEmail);
                 clearForm();
@@ -979,6 +1324,7 @@ private void initializeUI() {
                 showError("Student ID already exists. Please try again.");
             } else {
                 showError("Database error: " + ex.getMessage());
+                ex.printStackTrace(); // Add this for debugging
             }
         }
     }
@@ -999,13 +1345,18 @@ private void initializeUI() {
         passwordField.setText("");
         confirmPasswordField.setText("");
         courseBox.setSelectedIndex(0);
+        for (JCheckBox checkBox : courseCheckBoxes.values()) {
+            checkBox.setSelected(false);
+        }
+        courseCheckBoxes.clear();
+        updateSchedules();
     }
 
     private void showError(String message) {
         JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
     }
 
-    // Custom rounded components (matching login form style)
+    // Custom rounded components
     static class RoundedTextField extends JTextField {
         public RoundedTextField() {
             setOpaque(false);
@@ -1116,6 +1467,42 @@ private void initializeUI() {
             System.err.println("Error closing database connection: " + e.getMessage());
         }
         super.dispose();
+    }
+
+
+    private void enrollInCourse(String studentId, String newCourse) {
+        try {
+            String getQuery = "SELECT student_schedule FROM students WHERE student_id = ?";
+            PreparedStatement getStmt = conn.prepareStatement(getQuery);
+            getStmt.setString(1, studentId);
+            ResultSet rs = getStmt.executeQuery();
+            
+            String existingSchedule = "";
+            if (rs.next()) {
+                String temp = rs.getString("student_schedule");
+                existingSchedule = (temp != null) ? temp : "";
+            }
+            rs.close();
+            getStmt.close();
+            
+            String updatedSchedule;
+            if (existingSchedule.isEmpty()) {
+                updatedSchedule = newCourse;
+            } else {
+                updatedSchedule = existingSchedule + "|||" + newCourse;
+            }
+            
+            String updateQuery = "UPDATE students SET student_schedule = ? WHERE student_id = ?";
+            PreparedStatement updateStmt = conn.prepareStatement(updateQuery);
+            updateStmt.setString(1, updatedSchedule);
+            updateStmt.setString(2, studentId);
+            updateStmt.executeUpdate();
+            updateStmt.close();
+            
+        } catch (SQLException e) {
+            System.err.println("Error enrolling in course: " + e.getMessage());
+            showError("Failed to enroll in course: " + e.getMessage());
+        }
     }
 
     public static void main(String[] args) {

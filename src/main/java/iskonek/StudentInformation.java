@@ -6,6 +6,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontFormatException;
+import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
@@ -36,7 +37,6 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
-// Nag palagay ako sa AI ng commnets incase need mo i edit sa hard code, goodluck bang!!
 public class StudentInformation extends JFrame {
     private static final String DB_URL = "jdbc:sqlite:iskonek.db"; 
     Connection conn = SQLiteConnector.gConnection();
@@ -45,7 +45,7 @@ public class StudentInformation extends JFrame {
     private String studentId;
 
     // UI components
-    private JPanel contentPanel;
+    private JPanel contentPane;
 
     private JTextField[] fields;
     private JLabel nameValue, courseValue, idValue, deptValue, emailValue, dateValue, genderValue, civilValue, 
@@ -53,10 +53,11 @@ public class StudentInformation extends JFrame {
     private JTextField fullNameField, courseField, idNumberField, departmentField, emailField, dobField, 
                        genderField, civilStatusField, nationalityField, contactNumberField, addressField, 
                        guardianNameField, guardianContactField;
+    private Font contentFont;
+    private Font headerFont;
 
     private void initializeDatabase() {
         try {
-            // Use the same database path as login form
             conn = DriverManager.getConnection(DB_URL);
             createTables(conn);
         } catch (SQLException e) {
@@ -75,7 +76,6 @@ public class StudentInformation extends JFrame {
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
-                // First store all data in variables
                 String fullName = rs.getString("first_name") + " " + 
                                 rs.getString("middle_name") + " " + 
                                 rs.getString("last_name");
@@ -90,7 +90,6 @@ public class StudentInformation extends JFrame {
                 String guardianName = rs.getString("guardian_name");
                 String guardianContact = rs.getString("guardian_contact");
 
-                // Update UI components on the Event Dispatch Thread
                 SwingUtilities.invokeLater(() -> {
                     if (nameValue != null) nameValue.setText(fullName);
                     if (courseValue != null) courseValue.setText(course);
@@ -113,7 +112,6 @@ public class StudentInformation extends JFrame {
 
         } catch (Exception e) {
             e.printStackTrace();
-            // Consider showing an error message to the user
             SwingUtilities.invokeLater(() -> {
                 JOptionPane.showMessageDialog(this, 
                     "Error loading student data: " + e.getMessage(),
@@ -164,13 +162,14 @@ public class StudentInformation extends JFrame {
         getStudentData(studentId);
     }
 
-        private void InitializeUI() {
-        // Basic JFrame setup
+    private void InitializeUI() {
         setTitle("Student Information");
-        setSize(1260, 780);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); 
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setBounds(100, 100, 1260, 780);
+        setLocationRelativeTo(null);
         setResizable(false);
+
+        initializeFonts();
 
         nameValue = new JLabel();
         courseValue = new JLabel();
@@ -185,48 +184,50 @@ public class StudentInformation extends JFrame {
         addressValue = new JLabel();
         guardianNameValue = new JLabel();
         guardianContactValue = new JLabel();
-
         fields = new JTextField[13];
 
-        // Fonts used throughout the UI
-        Font contentFont = new Font("SansSerif", Font.PLAIN, 14);
-        Font headerFont;
-
-        // Attempt to load a custom font from a file, fallback if not found
-        try {
-            java.net.URL fontUrl = getClass().getResource("/Merich-YqW6q.otf");
-            if (fontUrl != null) {
-                File fontFile = new File(fontUrl.getFile());
-                headerFont = Font.createFont(Font.TRUETYPE_FONT, fontFile).deriveFont(14f);
-                GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-                ge.registerFont(headerFont);
-            } else {
-                throw new IOException("Font file not found.");
+        // Main panel 
+        JPanel mainPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                GradientPaint gradient = new GradientPaint(0, 0, new Color(102, 126, 234), 
+                                                         0, getHeight(), new Color(118, 75, 162));
+                g2d.setPaint(gradient);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
             }
-        } catch (IOException | FontFormatException e) {
-            System.err.println("Custom font not found or invalid. Using default font.");
-            headerFont = new Font("SansSerif", Font.BOLD, 14);
-        }
-
-        // Main panel holds everything with some padding and background color
-        JPanel mainPanel = new JPanel(new BorderLayout(20, 20));
-        mainPanel.setBackground(new Color(100, 104, 158)); // dark blue background
+        };
+        mainPanel.setLayout(new BorderLayout(20, 20));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        setContentPane(mainPanel);
 
-        // Content panel with rounded corners and light background
-        contentPanel = new RoundedPanel(0);
-        contentPanel.setLayout(null); // Absolute positioning for flexibility
-        contentPanel.setBackground(new Color(235, 235, 235)); // light gray
-        contentPanel.setPreferredSize(new Dimension(1200, 1300)); // large height for scrolling
+        // Content panel
+        contentPane = new RoundedPanel(0);
+        contentPane.setLayout(null); 
+        contentPane.setBackground(new Color(255, 255, 255, 245)); 
+        contentPane.setPreferredSize(new Dimension(1200, 1300)); 
 
-        // Header label at top-left of content panel
-        JLabel tabLabel = new JLabel("STUDENTS DATA");
-        tabLabel.setOpaque(true);
-        tabLabel.setBackground(new Color(235, 235, 235));
-        tabLabel.setForeground(Color.BLACK);
-        tabLabel.setFont(headerFont.deriveFont(Font.ITALIC, 15f));
-        tabLabel.setBounds(20, 5, 200, 25);
-        contentPanel.add(tabLabel);
+        // Header label 
+        JLabel tabLabel = new JLabel("Student Information");
+        tabLabel.setFont(headerFont.deriveFont(Font.ITALIC, 20f));
+        tabLabel.setBounds(15, 7, 220, 25);
+        contentPane.add(tabLabel);
+
+        // === Add Back Button ===
+        JButton backButton = new JButton("Back");
+        backButton.setFont(new Font("SansSerif", Font.BOLD, 13));
+        backButton.setBounds(1050, 40, 80, 30);
+        backButton.setBackground(Color.WHITE);
+        backButton.setFocusPainted(false);
+        backButton.setBorder(new RoundedBorder(10));
+        backButton.addActionListener(e -> {
+            this.dispose();
+            new StudentDashboard(studentId).setVisible(true);
+        });
+        contentPane.add(backButton);
 
         // Load and display profile picture if exists
         File pfpFile = new File(getClass().getResource("/pfp.png").getFile());
@@ -235,7 +236,7 @@ public class StudentInformation extends JFrame {
             Image scaledImage = icon.getImage().getScaledInstance(195, 195, Image.SCALE_SMOOTH);
             JLabel userIcon = new JLabel(new ImageIcon(scaledImage));
             userIcon.setBounds(30, 60, 195, 195);
-            contentPanel.add(userIcon);
+            contentPane.add(userIcon);
         }
 
         // Load and add ID verification icon
@@ -245,7 +246,7 @@ public class StudentInformation extends JFrame {
             Image scaledImage = icon.getImage().getScaledInstance(25, 25, Image.SCALE_SMOOTH);
             JLabel userIcon = new JLabel(new ImageIcon(scaledImage));
             userIcon.setBounds(160, 90, 180, 180);
-            contentPanel.add(userIcon);
+            contentPane.add(userIcon);
         }
 
         // Load and add school icon
@@ -255,7 +256,7 @@ public class StudentInformation extends JFrame {
             Image scaledImage = icon.getImage().getScaledInstance(25, 25, Image.SCALE_SMOOTH);
             JLabel userIcon = new JLabel(new ImageIcon(scaledImage));
             userIcon.setBounds(160, 125, 180, 180);
-            contentPanel.add(userIcon);
+            contentPane.add(userIcon);
         }
 
         // Load and add mail icon
@@ -265,78 +266,87 @@ public class StudentInformation extends JFrame {
             Image scaledImage = icon.getImage().getScaledInstance(25, 25, Image.SCALE_SMOOTH);
             JLabel userIcon = new JLabel(new ImageIcon(scaledImage));
             userIcon.setBounds(160, 160, 180, 180);
-            contentPanel.add(userIcon);
+            contentPane.add(userIcon);
         }
 
         // Title label for student info section
-        addBLabel(contentPanel, "Students Information", 240, 60, headerFont);
-
-        // Coordinates and spacing setup for labels and values
+        addBLabel(contentPane, "Students Information", 240, 60, headerFont);
         int baseX = 260, baseY = 100, lineHeight = 35;
 
-        // Display student name prominently
-        nameValue = addBValue(contentPanel, "Student Name", baseX - 20, baseY - 5, contentFont);
+        nameValue = addBValue(contentPane, "Student Name", baseX - 20, baseY - 5, contentFont);
 
-        // Add static labels and corresponding values (course, ID, dept, email)
-        addLabel(contentPanel, "Course:", baseX - 20, baseY += lineHeight, headerFont, SwingConstants.LEFT);
-        
-        
+        addLabel(contentPane, "Course:", baseX - 20, baseY += lineHeight, headerFont, SwingConstants.LEFT);
         String courseText = (courseValue != null) ? courseValue.getText().trim() : ""; 
         JLabel cLabel = new JLabel(courseText);
         cLabel.setFont(contentFont.deriveFont(14f));
         cLabel.setBounds(baseX + 100, baseY - 2, 600, 25);
         cLabel.setHorizontalAlignment(SwingConstants.LEFT);
         courseValue = cLabel; 
-        contentPanel.add(cLabel);
+        contentPane.add(cLabel);
 
-        addLabel(contentPanel, "ID Number:", baseX + 10, baseY += lineHeight, headerFont, SwingConstants.LEFT);
-
-
+        addLabel(contentPane, "ID Number:", baseX + 10, baseY += lineHeight, headerFont, SwingConstants.LEFT);
         String idText = (idValue != null) ? idValue.getText().trim() : "";
         JLabel idLabel = new JLabel(idText);
         idLabel.setFont(contentFont.deriveFont(14f));
         idLabel.setBounds(baseX + 110, baseY - 2, 600, 25);
         idLabel.setHorizontalAlignment(SwingConstants.LEFT);
         idValue = idLabel;
-        contentPanel.add(idLabel);
+        contentPane.add(idLabel);
         
-        addLabel(contentPanel, "Department:", baseX + 10, baseY += lineHeight, headerFont, SwingConstants.LEFT);
-        deptValue = addValue(contentPanel, "School of Engineering, Computing, and Architecture", baseX + 110, baseY - 2, contentFont);
+        addLabel(contentPane, "Department:", baseX + 10, baseY += lineHeight, headerFont, SwingConstants.LEFT);
+        deptValue = addValue(contentPane, "School of Engineering, Computing, and Architecture", baseX + 110, baseY - 2, contentFont);
 
-        addLabel(contentPanel, "Issued Email:", baseX + 10, baseY += lineHeight, headerFont, SwingConstants.LEFT);
-        
+        addLabel(contentPane, "Issued Email:", baseX + 10, baseY += lineHeight, headerFont, SwingConstants.LEFT);
         String emailText = (emailValue != null) ? emailValue.getText().trim() : "";
         JLabel emailLabel = new JLabel(emailText);
         emailLabel.setFont(contentFont.deriveFont(14f));
         emailLabel.setBounds(baseX + 110, baseY - 2, 600, 25);
         emailLabel.setHorizontalAlignment(SwingConstants.LEFT);
         emailValue = emailLabel;
-        contentPanel.add(emailLabel);
+        contentPane.add(emailLabel);
 
-        // Create tabbed pane to organize information tabs
+        // Create tabbed pane 
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setBounds(20, 280, 1146, 750);
 
-        // Create panel for general information
+        // Create panel 
         RoundedPanel generalInfoPanel = createGeneralInfoPanel();
 
-        // Add the panel as a tab
+        // Add the panel 
         tabbedPane.addTab("General Info", generalInfoPanel);
-        contentPanel.add(tabbedPane);
+        contentPane.add(tabbedPane);
 
         // Scroll pane setup
-        JScrollPane scrollPane = new JScrollPane(contentPanel);
+        JScrollPane scrollPane = new JScrollPane(contentPane);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.getVerticalScrollBar().setUnitIncrement(30);
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
 
-        // Add to main panel
         mainPanel.add(scrollPane, BorderLayout.CENTER);
-        add(mainPanel);
         setVisible(true);
     }
 
-        private RoundedPanel createGeneralInfoPanel() {
+    private void initializeFonts() {
+        contentFont = new Font("SansSerif", Font.PLAIN, 14);
+        try {
+            java.net.URL fontUrl = getClass().getResource("/Merich-YqW6q.otf");
+            if (fontUrl != null) {
+                File fontFile = new File(fontUrl.getFile());
+                headerFont = Font.createFont(Font.TRUETYPE_FONT, fontFile).deriveFont(16f);
+                GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+                ge.registerFont(headerFont);
+            } else {
+                throw new IOException("Font file not found.");
+            }
+        } catch (IOException | FontFormatException e) {
+            System.err.println("Custom font not found or invalid. Using default font.");
+            headerFont = new Font("SansSerif", Font.BOLD, 16);
+        }
+    }
+
+    private RoundedPanel createGeneralInfoPanel() {
         RoundedPanel panel = new RoundedPanel(20);
         panel.setLayout(new GridBagLayout());
         panel.setBackground(new Color(240, 240, 240));
@@ -347,245 +357,175 @@ public class StudentInformation extends JFrame {
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.anchor = GridBagConstraints.WEST;
 
-        // Create individual field variables instead of array
-        fullNameField = new JTextField();
-        courseField = new JTextField();
-        idNumberField = new JTextField();
-        departmentField = new JTextField();
-        emailField = new JTextField();
-        dobField = new JTextField();
-        genderField = new JTextField();
-        civilStatusField = new JTextField();
-        nationalityField = new JTextField();
-        contactNumberField = new JTextField();
-        addressField = new JTextField();
-        guardianNameField = new JTextField();
-        guardianContactField = new JTextField();
-
-        // Helper method to add label and field
-        addLabelAndField(panel, gbc, "Full Name:", 0);
-        addLabelAndField(panel, gbc, "Course:", 1);
-        addLabelAndField(panel, gbc, "ID Number:", 2);
-        addLabelAndField(panel, gbc, "Department:", 3);
-        addLabelAndField(panel, gbc, "Email:", 4);
-        addLabelAndField(panel, gbc, "Date of Birth:", 5);
-        addLabelAndField(panel, gbc, "Gender:", 6);
-        addLabelAndField(panel, gbc, "Civil Status:", 7);
-        addLabelAndField(panel, gbc, "Nationality:", 8);
-        addLabelAndField(panel, gbc, "Contact Number:", 9);
-        addLabelAndField(panel, gbc, "Address:", 10);
-        addLabelAndField(panel, gbc, "Guardian Name:", 11);
-        addLabelAndField(panel, gbc, "Guardian Contact No.:", 12);
-
-        // Add update button at the end
-        gbc.gridx = 1;
-        gbc.gridy = 13;
-        gbc.weightx = 0;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.EAST;
+        this.fields = new JTextField[13];
         
-        JButton updateBtn = createUpdateButton();
-        panel.add(updateBtn, gbc);
+        String[] labels = {
+            "Full Name:", "Course:", "ID Number:", "Department:", 
+            "Email:", "Date of Birth:", "Gender:", "Civil Status:",
+            "Nationality:", "Contact Number:", "Address:", 
+            "Guardian Name:", "Guardian Contact No.:"
+        };
+
+        // Get student data 
+        String query = "SELECT * FROM students WHERE student_id = ?";
+        try (Connection conn = SQLiteConnector.gConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            
+            pstmt.setString(1, studentId);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                for (int i = 0; i < labels.length; i++) {
+    
+                    gbc.gridx = 0;
+                    gbc.gridy = i;
+                    gbc.weightx = 0;
+                    gbc.fill = GridBagConstraints.NONE;
+                    
+                    JLabel label = new JLabel(labels[i]);
+                    label.setPreferredSize(new Dimension(150, 30));
+                    panel.add(label, gbc);
+
+                
+                    gbc.gridx = 1;
+                    gbc.weightx = 1;
+                    gbc.fill = GridBagConstraints.HORIZONTAL;
+                    
+                    fields[i] = new JTextField();
+                    fields[i].setFont(new Font("SansSerif", Font.PLAIN, 14));
+                    fields[i].setPreferredSize(new Dimension(400, 30));
+                    fields[i].setBorder(BorderFactory.createCompoundBorder(
+                        fields[i].getBorder(),
+                        BorderFactory.createEmptyBorder(3, 10, 5, 10)
+                    ));
+
+                    switch(i) {
+                        case 0: // Full Name
+                            fields[i].setText(rs.getString("first_name") + " " + 
+                                            rs.getString("middle_name") + " " + 
+                                            rs.getString("last_name"));
+                            fields[i].setEditable(false);
+                            break;
+                        case 1: // Course
+                            fields[i].setText(rs.getString("student_course"));
+                            fields[i].setEditable(false);
+                            break;
+                        case 2: // ID Number
+                            fields[i].setText(studentId);
+                            fields[i].setEditable(false);
+                            break;
+                        case 3: // Department
+                            fields[i].setText("School of Engineering, Computing, and Architecture");
+                            fields[i].setEditable(false);
+                            break;
+                        case 4: // Email
+                            fields[i].setText(rs.getString("student_email"));
+                            fields[i].setEditable(false);
+                            break;
+                        case 5: // Date of Birth
+                            fields[i].setText(rs.getString("date_of_birth"));
+                            fields[i].setEditable(false);
+                            break;
+                        case 6: // Gender
+                            fields[i].setText(rs.getString("gender"));
+                            fields[i].setEditable(false);
+                            break;
+                        case 7: // Civil Status
+                            fields[i].setText(rs.getString("civil_status"));
+                            fields[i].setEditable(false);
+                            break;
+                        case 8: // Nationality
+                            fields[i].setText(rs.getString("nationality"));
+                            fields[i].setEditable(false);
+                            break;
+                        case 9: // Contact Number
+                            fields[i].setText(rs.getString("contact_number"));
+                            fields[i].setEditable(true);
+                            fields[i].addFocusListener(new java.awt.event.FocusAdapter() {
+                                public void focusLost(java.awt.event.FocusEvent evt) {
+                                    saveContactFields();
+                                }
+                            });
+                            break;
+                        case 10: // Address
+                            fields[i].setText(rs.getString("address"));
+                            fields[i].setEditable(false);
+                            break;
+                        case 11: // Guardian Name
+                            fields[i].setText(rs.getString("guardian_name"));
+                            fields[i].setEditable(false);
+                            break;
+                        case 12: // Guardian Contact
+                            fields[i].setText(rs.getString("guardian_contact"));
+                            fields[i].setEditable(true);
+                            fields[i].addFocusListener(new java.awt.event.FocusAdapter() {
+                                public void focusLost(java.awt.event.FocusEvent evt) {
+                                    saveContactFields();
+                                }
+                            });
+                            break;
+                    }
+
+                    panel.add(fields[i], gbc);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                "Error loading student data: " + e.getMessage(),
+                "Database Error",
+                JOptionPane.ERROR_MESSAGE);
+        }
 
         return panel;
     }
 
+    // Save only the contact number and guardian contact number to the database
+    private void saveContactFields() {
+        try (Connection conn = SQLiteConnector.gConnection();
+             PreparedStatement pstmt = conn.prepareStatement(
+                "UPDATE students SET contact_number = ?, guardian_contact = ? WHERE student_id = ?")) {
+            pstmt.setString(1, fields[9].getText().trim());
+            pstmt.setString(2, fields[12].getText().trim());
+            pstmt.setString(3, studentId);
+            pstmt.executeUpdate();
+            JOptionPane.showMessageDialog(this,
+                "Contact numbers updated successfully!",
+                "Success",
+                JOptionPane.INFORMATION_MESSAGE);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                "Error saving contact numbers: " + e.getMessage(),
+                "Database Error",
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private void populateFormFields() {
-        System.out.println("--- Starting populateFormFields ---");
-        System.out.println("nameValue text: " + nameValue.getText());
-        System.out.println("fullNameField exists: " + (fullNameField != null));
-
-        if (fullNameField == null) return; 
-    
-        SwingUtilities.invokeLater(() -> {
-            System.out.println("Setting fullNameField to: " + nameValue.getText());
-            fullNameField.setText(nameValue.getText());
-            System.out.println("After setting, fullNameField contains: " + fullNameField.getText());
-            
-            fullNameField.setText(nameValue.getText());
-            courseField.setText(courseValue.getText());
-            idNumberField.setText(idValue.getText());
-            departmentField.setText(deptValue.getText());
-            emailField.setText(emailValue.getText());
-            dobField.setText(dateValue.getText());
-            genderField.setText(genderValue.getText());
-            civilStatusField.setText(civilValue.getText());
-            nationalityField.setText(nationalityValue.getText());
-            contactNumberField.setText(contactValue.getText());
-            addressField.setText(addressValue.getText());
-            guardianNameField.setText(guardianNameValue.getText());
-            guardianContactField.setText(guardianContactValue.getText());
-
-            Component parent = fullNameField.getParent();
-            if (parent != null) {
-                parent.revalidate();
-                parent.repaint();
-            }
-
-
-            System.out.println("Name from DB: " + nameValue.getText());
-            System.out.println("Name in field: " + fullNameField.getText());
-        });
-    }
-
-    // Helper method to add label and field to panel
-    private void addLabelAndField(RoundedPanel panel, GridBagConstraints gbc, String labelText, int row) {
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        gbc.weightx = 0;
-        gbc.fill = GridBagConstraints.NONE;
-        
-        JLabel label = new JLabel(labelText);
-        label.setPreferredSize(new Dimension(150, 30));
-        panel.add(label, gbc);
-
-        // Add text field
-        gbc.gridx = 1;
-        gbc.weightx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        fields[row] = new JTextField();
-        JTextField field = fields[row];
-        
-        field.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        field.setPreferredSize(new Dimension(400, 30));
-        field.setBorder(BorderFactory.createCompoundBorder(
-            field.getBorder(),
-            BorderFactory.createEmptyBorder(3, 10, 5, 10)
-        ));
-        panel.add(field, gbc);
-    }
-
-    private JButton createUpdateButton() {
-        JButton updateBtn = new JButton("Update Profile");
-        Font contentFont = new Font("SansSerif", Font.PLAIN, 14);
-        updateBtn.setFont(contentFont.deriveFont(Font.BOLD));
-        updateBtn.setBorder(new RoundedBorder(10));
-        updateBtn.setContentAreaFilled(true);
-        updateBtn.setFocusPainted(false);
-        updateBtn.setOpaque(true);
-        updateBtn.setBackground(new Color(180, 200, 250));
-        
-        updateBtn.addActionListener(e -> handleProfileUpdate());
-        
-        return updateBtn;
-    }
-
-    // Handles the profile update button click
-    private void handleProfileUpdate() {
-        if (!validateFormFields()) {
+        if (fields == null || fields.length < 13) {
+            System.err.println("Fields array not properly initialized!");
             return;
         }
+
+        System.out.println("Populating form fields...");
         
-        try {
-            updateUILabels();
-            updateStudentInDatabase();
-            
-            JOptionPane.showMessageDialog(this, 
-                "Profile updated successfully",
-                "Success", 
-                JOptionPane.INFORMATION_MESSAGE);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                "Error updating profile: " + ex.getMessage(),
-                "Error", 
-                JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
-        }
-    }
+        fields[0].setText(nameValue.getText().trim());
+        fields[1].setText(courseValue.getText().trim());
+        fields[2].setText(idValue.getText().trim());
+        fields[3].setText(deptValue.getText().trim());
+        fields[4].setText(emailValue.getText().trim());
+        fields[5].setText(dateValue.getText().trim());
+        fields[6].setText(genderValue.getText().trim());
+        fields[7].setText(civilValue.getText().trim());
+        fields[8].setText(nationalityValue.getText().trim());
+        fields[9].setText(contactValue.getText().trim());
+        fields[10].setText(addressValue.getText().trim());
+        fields[11].setText(guardianNameValue.getText().trim());
+        fields[12].setText(guardianContactValue.getText().trim());
 
-    // Validates the form fields before updating
-    private boolean validateFormFields() {
-        if (fields == null || fields.length < 13) {
-            JOptionPane.showMessageDialog(this, 
-                "Form fields not initialized",
-                "Error",
-                JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-        
-        // Example validations - customize as needed
-        if (fields[0].getText().trim().isEmpty()) {
-            showValidationError("Full name cannot be empty");
-            return false;
-        }
-        
-        if (!fields[4].getText().trim().matches("^.+@.+\\..+$")) {
-            showValidationError("Please enter a valid email address");
-            return false;
-        }
-        
-        return true;
-    }
-
-    // Updates the UI labels with current field values
-    private void updateUILabels() {
-        nameValue.setText(fullNameField.getText().trim());
-        courseValue.setText(courseField.getText().trim());
-        idValue.setText(idNumberField.getText().trim());
-        deptValue.setText(departmentField.getText().trim());
-        emailValue.setText(emailField.getText().trim());
-        dateValue.setText(dobField.getText().trim());
-        genderValue.setText(genderField.getText().trim());
-        civilValue.setText(civilStatusField.getText().trim());
-        nationalityValue.setText(nationalityField.getText().trim());
-        contactValue.setText(contactNumberField.getText().trim());
-        addressValue.setText(addressField.getText().trim());
-        guardianNameValue.setText(guardianNameField.getText().trim());
-        guardianContactValue.setText(guardianContactField.getText().trim());
-    }
-
-    /**
-     * Shows a validation error message
-     */
-    private void showValidationError(String message) {
-        JOptionPane.showMessageDialog(this,
-            message,
-            "Validation Error",
-            JOptionPane.WARNING_MESSAGE);
-    }
-
-    private void updateStudentInDatabase() throws SQLException {
-        String updateQuery = "UPDATE students SET " +
-            "first_name = ?, middle_name = ?, last_name = ?, " +
-            "student_course = ?, student_email = ?, date_of_birth = ?, " +
-            "gender = ?, civil_status = ?, nationality = ?, " +
-            "contact_number = ?, address = ?, guardian_name = ?, " +
-            "guardian_contact = ? WHERE student_id = ?";
-
-        try (Connection conn = SQLiteConnector.gConnection();
-            PreparedStatement pstmt = conn.prepareStatement(updateQuery)) {
-
-            // Parse full name into components
-            String[] nameParts = fields[0].getText().trim().split(" ");
-            String firstName = nameParts.length > 0 ? nameParts[0] : "";
-            String middleName = nameParts.length > 2 ? nameParts[1] : "";
-            String lastName = nameParts.length > 1 ? 
-                            nameParts[nameParts.length-1] : "";
-
-            // Set parameters
-            pstmt.setString(1, firstName);
-            pstmt.setString(2, middleName);
-            pstmt.setString(3, lastName);
-            pstmt.setString(4, fields[1].getText().trim()); // course
-            pstmt.setString(5, fields[4].getText().trim()); // email
-            pstmt.setString(6, fields[5].getText().trim()); // dob
-            pstmt.setString(7, fields[6].getText().trim()); // gender
-            pstmt.setString(8, fields[7].getText().trim()); // civil status
-            pstmt.setString(9, fields[8].getText().trim()); // nationality
-            pstmt.setString(10, fields[9].getText().trim()); // contact
-            pstmt.setString(11, fields[10].getText().trim()); // address
-            pstmt.setString(12, fields[11].getText().trim()); // guardian name
-            pstmt.setString(13, fields[12].getText().trim()); // guardian contact
-            pstmt.setString(14, studentId); // WHERE condition
-
-            // Execute update
-            int rowsAffected = pstmt.executeUpdate();
-            
-            if (rowsAffected == 0) {
-                throw new SQLException("No student found with ID: " + studentId);
-            }
-        }
+        System.out.println("First field value: " + fields[0].getText());
+        System.out.println("Second field value: " + fields[1].getText());
     }
 
     // Helper method to add a left-aligned label at specific position with font
@@ -622,16 +562,12 @@ public class StudentInformation extends JFrame {
         return label;
     }
 
-       
-
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            // Provide a sample or test student ID here
             new StudentInformation("2025-1000").setVisible(true);
         });
     }
 }
-
 
 // === Custom rounded border for buttons ===
 class RoundedBorder implements javax.swing.border.Border {
@@ -662,7 +598,7 @@ class RoundedPanel extends JPanel {
     public RoundedPanel(int radius) {
         super();
         this.cornerRadius = radius;
-        setOpaque(false); // let paintComponent handle background drawing
+        setOpaque(false); 
     }
 
     @Override
@@ -672,12 +608,9 @@ class RoundedPanel extends JPanel {
         int width = getWidth();
         int height = getHeight();
         Graphics2D graphics = (Graphics2D) g;
-        // Enable anti-aliasing for smooth corners
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        // Draw background rounded rectangle
         graphics.setColor(getBackground());
         graphics.fillRoundRect(0, 0, width - 1, height - 1, arcs.width, arcs.height);
-        // Draw border around the panel
         graphics.setColor(Color.GRAY);
         graphics.drawRoundRect(0, 0, width - 1, height - 1, arcs.width, arcs.height);
     }

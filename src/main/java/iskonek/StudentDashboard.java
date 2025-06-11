@@ -2,11 +2,11 @@ package iskonek;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
-import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -52,35 +52,35 @@ public class StudentDashboard extends JFrame {
         setLocationRelativeTo(null);
         setResizable(false);
 
-        contentPane = new JPanel();
-        contentPane.setBackground(new Color(100, 104, 158));
+        // Main panel 
+        contentPane = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                GradientPaint gradient = new GradientPaint(0, 0, new Color(102, 126, 234), 
+                                                         0, getHeight(), new Color(118, 75, 162));
+                g2d.setPaint(gradient);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
         contentPane.setBorder(new EmptyBorder(10, 10, 10, 10));
         contentPane.setLayout(null);
         setContentPane(contentPane);
         setResizable(false);
 
         JLabel welcomeLabel = new JLabel("Welcome, ");
-        try {
-            Font customFont = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("/Merich-YqW6q.otf")).deriveFont(Font.PLAIN, 52f);
-            welcomeLabel.setFont(customFont);
-        } catch (Exception e) {
-            welcomeLabel.setFont(new Font("Segoe UI", Font.BOLD, 52));
-        }
-
-        URL location = getClass().getResource("/Merich-YqW6q.otf");
-        if (location == null) {
-            System.out.println("Resource NOT found!");
-        } else {
-            System.out.println("Resource found at: " + location.toExternalForm());
-        }
-
+        welcomeLabel.setFont(new Font("Inter", Font.BOLD, 48));
+        welcomeLabel.setForeground(Color.WHITE);
         welcomeLabel.setBounds(34, 10, 300, 80);
         contentPane.add(welcomeLabel);
 
         JLabel nameLabel = new JLabel(fullName + "!");
-        nameLabel.setBackground(new Color(221, 160, 221));
-        nameLabel.setFont(new Font("Arial", Font.PLAIN, 52));
-        nameLabel.setBounds(320, 10, 800, 80);
+        nameLabel.setFont(new Font("Inter", Font.BOLD, 48));
+        nameLabel.setForeground(Color.WHITE);
+        nameLabel.setBounds(280, 10, 800, 80);
         contentPane.add(nameLabel);
 
         RoundedPanel panel = new RoundedPanel();
@@ -102,45 +102,69 @@ public class StudentDashboard extends JFrame {
         Image ledgerImg = ledgerIcon.getImage().getScaledInstance(204, 186, Image.SCALE_SMOOTH);
         ledgerIcon = new ImageIcon(ledgerImg);
 
-        // Profile Button (icon only)
+        // Profile Button
         RoundedButton btnProfile = new RoundedButton("");
         btnProfile.setIcon(profileIcon);
         styleIconOnlyButton(btnProfile);
         btnProfile.setBounds(34, 36, 204, 186); // Extra padding
         btnProfile.setToolTipText("My Profile");
+        btnProfile.setFont(new Font("Inter", Font.BOLD, 16));
+        btnProfile.setBackground(new Color(102, 126, 234));
+        btnProfile.setForeground(Color.BLACK);
         btnProfile.addActionListener(event -> {
             StudentInformation infoWindow = new StudentInformation(studentId);
             infoWindow.setVisible(true);
-            // dispose();
+            this.dispose();
         });
         panel.add(btnProfile);
 
-        // Schedule Button (icon + text)
+        // Schedule Button
         RoundedButton btnSchedule = new RoundedButton("");
         btnSchedule.setIcon(scheduleIcon);
         styleIconTextButton(btnSchedule);
         btnSchedule.setBounds(322, 36, 204, 186);
+        btnSchedule.setFont(new Font("Inter", Font.BOLD, 16));
+        btnSchedule.setBackground(new Color(102, 126, 234));
+        btnSchedule.setForeground(Color.BLACK);
         btnSchedule.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Schedule feature is not implemented yet.");
+            ScheduleViewer scheduleViewer = new ScheduleViewer(studentId);
+            scheduleViewer.setVisible(true);
+            this.dispose();
         });
         panel.add(btnSchedule);
 
-        // Student Ledger Button (icon + text)
+        // Student Ledger Button 
         RoundedButton btnLedger = new RoundedButton("");
         btnLedger.setIcon(ledgerIcon);
         styleIconTextButton(btnLedger);
         btnLedger.setBounds(596, 36, 204, 186);
+        btnLedger.setFont(new Font("Inter", Font.BOLD, 16));
+        btnLedger.setBackground(new Color(102, 126, 234));
+        btnLedger.setForeground(Color.BLACK);
         btnLedger.addActionListener(e -> {
-            // new Ledger(studentName).setVisible(true);
-            // dispose();
+            String course = getStudentCourse(studentId);
+            new Ledger(studentId, fullName, course, this).setVisible(true);
+            this.dispose();
         });
         panel.add(btnLedger);
+
+        // Log Out Button 
+        RoundedButton btnLogout = new RoundedButton("Log Out");
+        btnLogout.setFont(new Font("Inter", Font.BOLD, 16));
+        btnLogout.setBackground(new Color(102, 126, 234));
+        btnLogout.setForeground(Color.BLACK);
+        btnLogout.setBounds(1080, 30, 120, 40);
+        btnLogout.setFocusPainted(false);
+        btnLogout.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnLogout.addActionListener(e -> {
+            new IskonekLogin().setVisible(true);
+            dispose();
+        });
+        contentPane.add(btnLogout);
     }
 
-    // Initialize database connection and create table if needed
     private void initializeDatabase() {
         try {
-            // Assuming SQLite database - adjust connection string as needed
             connection = DriverManager.getConnection("jdbc:sqlite:iskonek.db");
         
         } catch (SQLException e) {
@@ -173,7 +197,24 @@ public class StudentDashboard extends JFrame {
         return fullName;
     }
 
-    // Clean up database connection when window is closed
+    private String getStudentCourse(String studentId) {
+        String course = "";
+        try {
+            String query = "SELECT student_course FROM students WHERE student_id = ?";
+            PreparedStatement pstmt = connection.prepareStatement(query);
+            pstmt.setString(1, studentId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                course = rs.getString("student_course");
+            }
+            rs.close();
+            pstmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return course;
+    }
+
     @Override
     public void dispose() {
         try {
@@ -186,9 +227,7 @@ public class StudentDashboard extends JFrame {
         super.dispose();
     }
 
-    // Main method for testing/running the dashboard independently
     public static void main(String[] args) {
-        // Set look and feel to system default for better appearance
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
@@ -197,7 +236,6 @@ public class StudentDashboard extends JFrame {
 
         String studentId = "2025-1000";
 
-        // Run on Event Dispatch Thread
         SwingUtilities.invokeLater(() -> {
             try {
                 StudentDashboard dashboard = new StudentDashboard(studentId);
@@ -221,7 +259,7 @@ public class StudentDashboard extends JFrame {
         button.setContentAreaFilled(false);
         button.setFocusPainted(false);
         button.setOpaque(false);
-        // Hover effect
+
         button.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 button.setBorderPainted(true);
@@ -236,13 +274,13 @@ public class StudentDashboard extends JFrame {
     private void styleIconTextButton(JButton button) {
         button.setHorizontalTextPosition(SwingConstants.CENTER);
         button.setVerticalTextPosition(SwingConstants.BOTTOM);
-        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        button.setFont(new Font("Inter", Font.BOLD, 16));
         button.setForeground(Color.BLACK);
         button.setBorderPainted(false);
         button.setContentAreaFilled(false);
         button.setFocusPainted(false);
         button.setOpaque(false);
-        // Hover effect
+        
         button.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 button.setBorderPainted(true);
@@ -276,6 +314,9 @@ public class StudentDashboard extends JFrame {
             setFocusPainted(false);
             setContentAreaFilled(false);
             setOpaque(false);
+            setFont(new Font("Inter", Font.BOLD, 16));
+            setBackground(new Color(102, 126, 234));
+            setForeground(Color.BLACK);
         }
 
         @Override

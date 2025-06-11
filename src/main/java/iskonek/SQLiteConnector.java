@@ -48,12 +48,30 @@ public class SQLiteConnector {
                 "enrollment_date DATETIME DEFAULT CURRENT_TIMESTAMP," +
                 "student_email TEXT UNIQUE NOT NULL," +
                 "student_course TEXT NOT NULL," +
-                "student_schedule TEXT NOT NULL" +
+                "student_schedule TEXT" +
                 ")";
             stmt.execute(createStudentsTable);
+
+            try {
+                stmt.execute("ALTER TABLE students ADD COLUMN student_schedule TEXT");
+            } catch (SQLException e) {
+                System.out.println("Note: student_schedule column might already exist");
+            }
+
+            String createStudentCoursesTable =
+                "CREATE TABLE IF NOT EXISTS student_courses (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "student_id TEXT NOT NULL," +
+                "course_code TEXT NOT NULL," +
+                "schedule TEXT NOT NULL," +
+                "enrollment_date DATETIME DEFAULT CURRENT_TIMESTAMP," +
+                "FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE," +
+                "UNIQUE(student_id, course_code)" +
+                ")";
+            stmt.execute(createStudentCoursesTable);
             stmt.close();
 
-            System.out.println("Students table created or already exists.");
+            System.out.println("Students and student_courses tables created or already exist.");
         } catch (SQLException e) {
             System.err.println("Error creating tables: " + e.getMessage());
         }
